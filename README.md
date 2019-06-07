@@ -1,6 +1,10 @@
 # GoFor
 GoFor (Go Forensics) is a forensic library geared towards augmenting EDR toolsets. Unfortunately, not all EDR toolsets has the capability of collecting forensically relevant files from endpoints.
 
+## Usage
+
+```gofor-collector.exe --zip out.zip```
+
 ## Currently Available Features
 - GoFor Collector: Windows command line collector that can acquire the files listed below and write them to a zip file.
   - OS Drive $MFT
