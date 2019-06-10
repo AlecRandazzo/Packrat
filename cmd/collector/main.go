@@ -10,11 +10,19 @@
 package main
 
 import (
-	"flag"
 	"github.com/AlecRandazzo/GoFor/pkg/gofor"
+	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
+
+type Options struct {
+	//Verbose            bool     `short:"v" long:"verbose" description:"Show verbose information."`
+	//SendTo             string   `short:"s" long:"sendto" required:"true" description:"Where to send collected files to." choice:"zip"`
+	ZipName            string `short:"z" long:"zipname" description:"Output file name for the zip." required:"true"`
+	DataTypesToCollect string `short:"g" long:"gather" default:"a" description:"Types of data to collect. Concatenate the abbreviation characters together for what you want. The order doesn't matter. Valid values are 'a' for all, 'm' for $MFT, 'r' for system registries, 'u' for user registries, 'e' for event logs. Examples: '/g mrue', '/g a'"`
+}
 
 func init() {
 	// Log configuration
@@ -24,18 +32,40 @@ func init() {
 }
 
 func main() {
-	hostname, _ := os.Hostname()
-	outZip := flag.String("zip", hostname, "")
-	flag.Parse()
+	opts := new(Options)
+	parsedOpts := flags.NewParser(opts, flags.Default)
+	_, err := parsedOpts.Parse()
+	if err != nil {
+		os.Exit(-1)
+	}
 
 	client := gofor.CollectorClient{}
-	exportList := gofor.ExportList{
-		{FullPath: "C:\\\\$MFT", Type: "equal"},
-		{FullPath: "C:\\Windows\\System32\\config\\SYSTEM", Type: "equal"},
-		{FullPath: "C:\\Windows\\System32\\config\\SOFTWARE", Type: "equal"},
-		{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"},
-		{FullPath: "C:\\\\users\\\\([^\\\\]+)\\\\ntuser.dat$", Type: "regex"},
-		{FullPath: "C:\\\\Users\\\\([^\\\\]+)\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\usrclass.dat$", Type: "regex"},
+	var exportList gofor.ExportList
+	if strings.Contains(opts.DataTypesToCollect, "a") {
+		exportList = gofor.ExportList{
+			{FullPath: "C:\\\\$MFT", Type: "equal"},
+			{FullPath: "C:\\Windows\\System32\\config\\SYSTEM", Type: "equal"},
+			{FullPath: "C:\\Windows\\System32\\config\\SOFTWARE", Type: "equal"},
+			{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"},
+			{FullPath: "C:\\\\users\\\\([^\\\\]+)\\\\ntuser.dat$", Type: "regex"},
+			{FullPath: "C:\\\\Users\\\\([^\\\\]+)\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\usrclass.dat$", Type: "regex"},
+		}
+	} else {
+		if strings.Contains(opts.DataTypesToCollect, "m") {
+			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\\\$MFT", Type: "equal"})
+		}
+		if strings.Contains(opts.DataTypesToCollect, "r") {
+			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\Windows\\System32\\config\\SYSTEM", Type: "equal"})
+			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\Windows\\System32\\config\\SOFTWARE", Type: "equal"})
+		}
+		if strings.Contains(opts.DataTypesToCollect, "u") {
+			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\\\users\\\\([^\\\\]+)\\\\ntuser.dat$", Type: "regex"})
+			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\\\Users\\\\([^\\\\]+)\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\usrclass.dat$", Type: "regex"})
+		}
+		if strings.Contains(opts.DataTypesToCollect, "e") {
+			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"})
+		}
 	}
-	client.ExportToZip(exportList, *outZip)
+
+	client.ExportToZip(exportList, opts.ZipName)
 }

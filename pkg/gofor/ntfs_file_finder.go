@@ -19,21 +19,21 @@ import (
 	"syscall"
 )
 
-func (client *CollectorClient) findFilesInDataRun(newVolumeHandle *VolumeHandle, dataRunsQueue *chan DataRun, waitGroup *sync.WaitGroup) {
+func (client *CollectorClient) findFilesInDataRun(newVolumeHandle *volumeHandle, dataRunsQueue *chan dataRun, waitGroup *sync.WaitGroup) {
 	client.waitGroup.Done()
 	var fileCopyWaitGroup sync.WaitGroup
 	openChannel := true
 
 	// Spin up workers that will do the file copying
 	numberOfWorkers := 1
-	filesToCopyQueue := make(chan MasterFileTableRecord, 100)
+	filesToCopyQueue := make(chan masterFileTableRecord, 100)
 	for i := 0; i < numberOfWorkers; i++ {
 		fileCopyWaitGroup.Add(1)
 		go client.mftRecordToBytes(&filesToCopyQueue, &fileCopyWaitGroup)
 	}
 
 	for openChannel == true {
-		dataRun := DataRun{}
+		dataRun := dataRun{}
 		dataRun, openChannel = <-*dataRunsQueue
 		log.Debugf("Searching for files in the following datarun: %+v", dataRun)
 		bytesLeft := dataRun.Length
@@ -42,10 +42,10 @@ func (client *CollectorClient) findFilesInDataRun(newVolumeHandle *VolumeHandle,
 			buffer := make([]byte, newVolumeHandle.Vbr.MftRecordSize)
 			_, _ = syscall.Read(newVolumeHandle.Handle, buffer)
 
-			var mftRecord MasterFileTableRecord
+			var mftRecord masterFileTableRecord
 			mftRecord.MftRecordBytes = buffer
 			mftRecord.bytesPerCluster = newVolumeHandle.Vbr.BytesPerCluster
-			_ = mftRecord.ParseMFTRecord()
+			_ = mftRecord.parseMFTRecord()
 			if len(mftRecord.FileNameAttributes) == 0 {
 				bytesLeft -= newVolumeHandle.Vbr.MftRecordSize
 				continue
@@ -84,7 +84,7 @@ func (client *CollectorClient) findFilesInDataRun(newVolumeHandle *VolumeHandle,
 func (client *CollectorClient) findFiles() (err error) {
 	var fileCopyWaitGroup sync.WaitGroup
 
-	dataRunsQueue := make(chan DataRun, len(client.VolumeHandle.MftRecord0.DataAttributes.NonResidentDataAttributes.DataRuns))
+	dataRunsQueue := make(chan dataRun, len(client.VolumeHandle.MftRecord0.DataAttributes.NonResidentDataAttributes.DataRuns))
 	for _, value := range client.VolumeHandle.MftRecord0.DataAttributes.NonResidentDataAttributes.DataRuns {
 		dataRunsQueue <- value
 	}
@@ -93,8 +93,8 @@ func (client *CollectorClient) findFiles() (err error) {
 	workerCount := 1
 	for i := 0; i < workerCount; i++ {
 		volumeLetter := strings.TrimRight(os.Getenv("SYSTEMDRIVE"), ":")
-		newVolumeHandle := VolumeHandle{}
-		newVolumeHandle, _ = GetVolumeHandle(volumeLetter)
+		newVolumeHandle := volumeHandle{}
+		newVolumeHandle, _ = getVolumeHandle(volumeLetter)
 		newVolumeHandle.MappedDirectories = client.VolumeHandle.MappedDirectories
 		fileCopyWaitGroup.Add(1)
 		go client.findFilesInDataRun(&newVolumeHandle, &dataRunsQueue, &fileCopyWaitGroup)

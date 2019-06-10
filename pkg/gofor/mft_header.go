@@ -11,14 +11,14 @@ package gofor
 
 import "encoding/binary"
 
-type RecordHeader struct {
+type recordHeader struct {
 	AttributesOffset uint16
 	RecordNumber     uint32
 	FlagDeleted      bool
 	FlagDirectory    bool
 }
 
-func (mftRecord *MasterFileTableRecord) getRecordHeader() {
+func (mftRecord *masterFileTableRecord) getRecordHeader() {
 	const offsetAttributesOffset = 0x14
 
 	const offsetRecordNumber = 0x2c
@@ -33,7 +33,7 @@ func (mftRecord *MasterFileTableRecord) getRecordHeader() {
 	return
 }
 
-func (mftRecord *MasterFileTableRecord) getHeaderFlags() {
+func (mftRecord *masterFileTableRecord) getHeaderFlags() {
 	const offsetRecordFlag = 0x16
 	const codeDeletedFile = 0x00
 	//const codeActiveFile = 0x01

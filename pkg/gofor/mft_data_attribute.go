@@ -16,38 +16,40 @@ import (
 	"strconv"
 )
 
-type ResidentDataAttributes struct {
+type residentDataAttributes struct {
 	ResidentData []byte
 }
 
-type NonResidentDataAttributes struct {
+type nonResidentDataAttributes struct {
 	StartingVCN   int
 	EndingVCN     int
 	OffsetDataRun int8
 	AllocatedSize uint64
 	RealSize      uint64
-	DataRuns      map[int]DataRun
+	DataRuns      map[int]dataRun
 }
 
-type RawDataRun struct {
+type rawDataRun struct {
 	NumberOrder      int
 	ClusterOffset    int64
 	NumberOfClusters int64
 }
 
-type DataRun struct {
+type rawDataRuns map[int]rawDataRun
+
+type dataRun struct {
 	AbsoluteOffset int64
 	Length         int64
 }
 
-type DataAttributes struct {
+type dataAttributes struct {
 	TotalSize                 uint8
 	FlagResident              bool
-	ResidentDataAttributes    ResidentDataAttributes
-	NonResidentDataAttributes NonResidentDataAttributes
+	ResidentDataAttributes    residentDataAttributes
+	NonResidentDataAttributes nonResidentDataAttributes
 }
 
-func (mftRecord *MasterFileTableRecord) getDataAttribute() (err error) {
+func (mftRecord *masterFileTableRecord) getDataAttribute() (err error) {
 	const codeData = 0x80
 	const offsetResidentFlag = 0x08
 
@@ -86,7 +88,7 @@ func (mftRecord *MasterFileTableRecord) getDataAttribute() (err error) {
 	return
 }
 
-func getResidentDataAttribute(attributeBytes []byte) (residentDataAttributes ResidentDataAttributes, err error) {
+func getResidentDataAttribute(attributeBytes []byte) (residentDataAttributes residentDataAttributes, err error) {
 	const offsetResidentData = 0x18
 
 	defer func() {
@@ -104,7 +106,7 @@ func getResidentDataAttribute(attributeBytes []byte) (residentDataAttributes Res
 	return
 }
 
-func getNonResidentDataAttribute(attributeBytes []byte, bytesPerCluster int64) (nonResidentDataAttributes NonResidentDataAttributes, err error) {
+func getNonResidentDataAttribute(attributeBytes []byte, bytesPerCluster int64) (nonResidentDataAttributes nonResidentDataAttributes, err error) {
 	const offsetDataRunOffset = 0x20
 
 	defer func() {
@@ -137,12 +139,7 @@ func getNonResidentDataAttribute(attributeBytes []byte, bytesPerCluster int64) (
 	return
 }
 
-func resolveDataRuns(rawDataRuns map[int]RawDataRun, bytesPerCluster int64) (resolvedDataRuns map[int]DataRun) {
-
-	return
-}
-
-func getDataRuns(dataRunBytes []byte, bytesPerCluster int64) (dataRuns map[int]DataRun) {
+func getDataRuns(dataRunBytes []byte, bytesPerCluster int64) (dataRuns map[int]dataRun) {
 	defer func() {
 		if r := recover(); r != nil {
 			return
@@ -154,8 +151,8 @@ func getDataRuns(dataRunBytes []byte, bytesPerCluster int64) (dataRuns map[int]D
 		See the following for a good write up on data runs: https://homepage.cs.uri.edu/~thenry/csc487/video/66_NTFS_Data_Runs.pdf
 	*/
 	// Initialize a few variables
-	rawDataRun := RawDataRun{}
-	rawDataRuns := make(map[int]RawDataRun)
+	rawDataRun := rawDataRun{}
+	rawDataRuns := make(rawDataRuns)
 	offsetTracker := 0
 	runCounter := 0
 
@@ -184,13 +181,13 @@ func getDataRuns(dataRunBytes []byte, bytesPerCluster int64) (dataRuns map[int]D
 			copy(offsetBytes, dataRunBytes[(offsetTracker+lengthByteCount):(offsetTracker+lengthByteCount+offsetByteCount)])
 
 			// Convert the bytes for the data run offset and length to little endian int64
-			rawDataRun.ClusterOffset = ConvertLittleEndianByteSliceToInt64(offsetBytes)
+			rawDataRun.ClusterOffset = convertLittleEndianByteSliceToInt64(offsetBytes)
 			if rawDataRun.ClusterOffset == 0 {
 				dataRuns = nil
 				return
 			}
 
-			rawDataRun.NumberOfClusters = ConvertLittleEndianByteSliceToInt64(lengthBytes)
+			rawDataRun.NumberOfClusters = convertLittleEndianByteSliceToInt64(lengthBytes)
 			if rawDataRun.NumberOfClusters == 0 {
 				dataRuns = nil
 				return
@@ -210,11 +207,11 @@ func getDataRuns(dataRunBytes []byte, bytesPerCluster int64) (dataRuns map[int]D
 	}
 
 	// Resolve Data Runs
-	dataRuns = make(map[int]DataRun)
+	dataRuns = make(map[int]dataRun)
 	offset := int64(0)
 	for i := 0; i < len(rawDataRuns); i++ {
 		offset = offset + (rawDataRuns[i].ClusterOffset * bytesPerCluster)
-		dataRuns[i] = DataRun{
+		dataRuns[i] = dataRun{
 			AbsoluteOffset: offset,
 			Length:         rawDataRuns[i].NumberOfClusters * bytesPerCluster,
 		}

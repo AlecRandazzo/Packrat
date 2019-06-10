@@ -20,20 +20,20 @@ func TestMasterFileTableRecord_getAttributeList(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		mftRecord     *MasterFileTableRecord
-		wantMftRecord *MasterFileTableRecord
+		mftRecord     *masterFileTableRecord
+		wantMftRecord *masterFileTableRecord
 	}{
 		{
 			name: "Test1",
-			mftRecord: &MasterFileTableRecord{
+			mftRecord: &masterFileTableRecord{
 				MftRecordBytes: mftBytes,
-				RecordHeader: RecordHeader{
+				RecordHeader: recordHeader{
 					AttributesOffset: 0x38,
 				},
-				AttributeInfo: []AttributeInfo{},
+				AttributeInfo: []attributeInfo{},
 			},
-			wantMftRecord: &MasterFileTableRecord{
-				AttributeInfo: []AttributeInfo{
+			wantMftRecord: &masterFileTableRecord{
+				AttributeInfo: []attributeInfo{
 					{
 						AttributeType:  16,
 						AttributeBytes: []byte{16, 0, 0, 0, 96, 0, 0, 0, 0, 0, 24, 0, 0, 0, 0, 0, 72, 0, 0, 0, 24, 0, 0, 0, 234, 36, 205, 74, 116, 212, 209, 1, 234, 36, 205, 74, 116, 212, 209, 1, 234, 36, 205, 74, 116, 212, 209, 1, 234, 36, 205, 74, 116, 212, 209, 1, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},

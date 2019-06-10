@@ -15,7 +15,7 @@ import (
 	"math"
 )
 
-type VolumeBootRecord struct {
+type volumeBootRecord struct {
 	VolumeLetter           string
 	BytesPerSector         int64
 	SectorsPerCluster      int64
@@ -26,7 +26,7 @@ type VolumeBootRecord struct {
 }
 
 // Parses a byte slice containing an NTFS volume boot record (VBR)
-func ParseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr VolumeBootRecord, err error) {
+func parseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr volumeBootRecord, err error) {
 	const codeNTFSMagicNumber = "NTFS"
 	const offsetNTFSMagicNumber = 0x03
 	const lengthNTFSMagicNumber = 0x04
@@ -58,7 +58,7 @@ func ParseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr VolumeBootRecord, 
 	vbr.MftRecordSize = int64(math.Pow(2, float64(signedTwosComplement)))
 	vbr.BytesPerCluster = vbr.SectorsPerCluster * vbr.BytesPerSector
 	valueMftClusterOffset := volumeBootRecordBytes[offsetMftClusterOffset : offsetMftClusterOffset+lengthMftClusterOffset]
-	mftClusterOffset := ConvertLittleEndianByteSliceToInt64(valueMftClusterOffset)
+	mftClusterOffset := convertLittleEndianByteSliceToInt64(valueMftClusterOffset)
 	if mftClusterOffset == 0 {
 		err = errors.Wrap(err, "failed to get mft offset clusters")
 		return
