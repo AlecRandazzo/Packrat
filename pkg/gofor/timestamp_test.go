@@ -35,8 +35,8 @@ func TestParseTimestamp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotTimestamp := ParseTimestamp(tt.args.timestampBytes); gotTimestamp != tt.wantTimestamp {
-				t.Errorf("ParseTimestamp() = %v, want %v", gotTimestamp, tt.wantTimestamp)
+			if gotTimestamp := parseTimestamp(tt.args.timestampBytes); gotTimestamp != tt.wantTimestamp {
+				t.Errorf("parseTimestamp() = %v, want %v", gotTimestamp, tt.wantTimestamp)
 			}
 		})
 	}

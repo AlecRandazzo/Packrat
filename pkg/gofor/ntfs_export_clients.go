@@ -19,11 +19,12 @@ import (
 type CollectorClient struct {
 	FileWriteQueue          chan fileExportNameAndBytes
 	waitGroup               sync.WaitGroup
-	VolumeHandle            VolumeHandle
+	VolumeHandle            volumeHandle
 	FileEqualListForFinding fileEqualListForFinding
 	FileRegexListForFinding fileRegexListForFinding
 }
 
+// Collects target files and writes them to a zip file.
 func (client *CollectorClient) ExportToZip(exportList ExportList, outFileName string) {
 	client.FileWriteQueue = make(chan fileExportNameAndBytes)
 	client.waitGroup.Add(1)

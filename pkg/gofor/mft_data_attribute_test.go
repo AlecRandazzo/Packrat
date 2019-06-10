@@ -18,21 +18,21 @@ import (
 func TestMasterFileTableRecord_getDataAttribute(t *testing.T) {
 	tests := []struct {
 		name          string
-		mftRecord     *MasterFileTableRecord
-		wantMftRecord *MasterFileTableRecord
+		mftRecord     *masterFileTableRecord
+		wantMftRecord *masterFileTableRecord
 	}{
 		{
 			name: "Testing mft record 0.",
-			mftRecord: &MasterFileTableRecord{
-				AttributeInfo: []AttributeInfo{
+			mftRecord: &masterFileTableRecord{
+				AttributeInfo: []attributeInfo{
 					{
 						AttributeType:  128,
 						AttributeBytes: []byte{128, 0, 0, 0, 120, 0, 0, 0, 1, 0, 64, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63, 55, 5, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 116, 83, 0, 0, 0, 0, 0, 0, 116, 83, 0, 0, 0, 0, 0, 0, 116, 83, 0, 0, 0, 0, 51, 32, 200, 0, 0, 0, 12, 67, 109, 148, 1, 212, 133, 226, 1, 67, 54, 210, 0, 106, 250, 123, 9, 66, 253, 12, 241, 48, 8, 245, 66, 69, 99, 201, 78, 228, 8, 67, 97, 209, 0, 235, 81, 198, 1, 67, 218, 198, 0, 17, 228, 150, 1, 0, 0, 0},
 					},
 				},
 			},
-			wantMftRecord: &MasterFileTableRecord{
-				DataAttributes: DataAttributes{
+			wantMftRecord: &masterFileTableRecord{
+				DataAttributes: dataAttributes{
 					FlagResident: false,
 				},
 			},
@@ -53,7 +53,7 @@ func Test_getResidentDataAttribute(t *testing.T) {
 	tests := []struct {
 		name                       string
 		args                       args
-		wantResidentDataAttributes ResidentDataAttributes
+		wantResidentDataAttributes residentDataAttributes
 		wantErr                    bool
 	}{
 		{
@@ -61,7 +61,7 @@ func Test_getResidentDataAttribute(t *testing.T) {
 			args: args{
 				attributeBytes: []byte{128, 0, 0, 0, 120, 0, 0, 0, 1, 0, 64, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63, 55, 5, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 116, 83, 0, 0, 0, 0, 0, 0, 116, 83, 0, 0, 0, 0, 0, 0, 116, 83, 0, 0, 0, 0, 51, 32, 200, 0, 0, 0, 12, 67, 109, 148, 1, 212, 133, 226, 1, 67, 54, 210, 0, 106, 250, 123, 9, 66, 253, 12, 241, 48, 8, 245, 66, 69, 99, 201, 78, 228, 8, 67, 97, 209, 0, 235, 81, 198, 1, 67, 218, 198, 0, 17, 228, 150, 1, 0, 0, 0},
 			},
-			wantResidentDataAttributes: ResidentDataAttributes{
+			wantResidentDataAttributes: residentDataAttributes{
 				ResidentData: []byte{63, 55, 5, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 116, 83, 0, 0, 0, 0, 0, 0, 116, 83, 0, 0, 0, 0, 0, 0, 116, 83, 0, 0, 0, 0, 51, 32, 200, 0, 0, 0, 12, 67, 109, 148, 1, 212, 133, 226, 1, 67, 54, 210, 0, 106, 250, 123, 9, 66, 253, 12, 241, 48, 8, 245, 66, 69, 99, 201, 78, 228, 8, 67, 97, 209, 0, 235, 81, 198, 1, 67, 218, 198, 0, 17, 228, 150, 1, 0, 0, 0},
 			},
 			wantErr: false,
@@ -118,7 +118,7 @@ func Test_getDataRuns(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         args
-		wantDataRuns map[int]DataRun
+		wantDataRuns map[int]dataRun
 	}{
 		{
 			name: "Test with MFT record 0.",
@@ -126,7 +126,7 @@ func Test_getDataRuns(t *testing.T) {
 				dataRunBytes:    []byte{51, 32, 200, 0, 0, 0, 12, 67, 109, 148, 1, 212, 133, 226, 1, 67, 54, 210, 0, 106, 250, 123, 9, 66, 253, 12, 241, 48, 8, 245, 66, 69, 99, 201, 78, 228, 8, 67, 97, 209, 0, 235, 81, 198, 1, 67, 218, 198, 0, 17, 228, 150, 1, 0, 0, 0},
 				bytesPerCluster: 4096,
 			},
-			wantDataRuns: map[int]DataRun{
+			wantDataRuns: map[int]dataRun{
 				0: {
 					AbsoluteOffset: 3221225472,
 					Length:         209846272,

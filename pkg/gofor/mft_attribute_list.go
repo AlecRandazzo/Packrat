@@ -16,13 +16,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-type AttributeInfo struct {
+type attributeInfo struct {
 	AttributeType  byte
 	AttributeBytes []byte
 }
 
 // Get MFT record attributes list.
-func (mftRecord *MasterFileTableRecord) getAttributeList() (err error) {
+func (mftRecord *masterFileTableRecord) getAttributeList() (err error) {
 	const offsetAttributeSize = 0x04
 	const lengthAttributeSize = 0x04
 
@@ -117,7 +117,7 @@ func (mftRecord *MasterFileTableRecord) getAttributeList() (err error) {
 		}
 
 		// Pull out information describing the attribute and the attribute bytes
-		attributeInfoSlice := AttributeInfo{}
+		attributeInfoSlice := attributeInfo{}
 		attributeInfoSlice.AttributeType = mftRecord.MftRecordBytes[mftRecord.RecordHeader.AttributesOffset]
 		attributeSize := binary.LittleEndian.Uint16(mftRecord.MftRecordBytes[mftRecord.RecordHeader.AttributesOffset+offsetAttributeSize : mftRecord.RecordHeader.AttributesOffset+offsetAttributeSize+lengthAttributeSize])
 		//AttributeSize := binary.LittleEndian.Uint16(MftRecordBytes[attributeOffset+4:attributeOffset+5])

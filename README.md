@@ -5,7 +5,17 @@ GoFor (Go Forensics) is a forensic library geared towards augmenting EDR toolset
 
 ## Usage
 
-```gofor-collector.exe --zip out.zip```
+### GoFor Collector
+
+To collect all forensic files:
+```gofor-collector.exe /z whatever.zip /g a```
+
+To collect just event logs:
+```gofor-collector.exe /z whatever.zip /g e```
+
+To collect $MFT and registry hives: ```gofor-collector.exe /z whatever.zip /g mr```
+
+For `/g` concatenate the abbreviation characters together for what you want. The order doesn't matter. Valid values are `a` for all (defaults to this if you don't use `/g`), `m` for $MFT, `r` for system registries, `u` for user registries, `e` for event logs.
 
 ## Currently Available Features
 - GoFor Collector: Windows command line collector that can acquire the files listed below and write them to a zip file.

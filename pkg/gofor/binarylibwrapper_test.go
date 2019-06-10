@@ -30,8 +30,8 @@ func TestConvertLittleEndianByteSliceToInt64(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOutInt64 := ConvertLittleEndianByteSliceToInt64(tt.args.inBytes); gotOutInt64 != tt.wantOutInt64 {
-				t.Errorf("ConvertLittleEndianByteSliceToInt64() = %v, want %v", gotOutInt64, tt.wantOutInt64)
+			if gotOutInt64 := convertLittleEndianByteSliceToInt64(tt.args.inBytes); gotOutInt64 != tt.wantOutInt64 {
+				t.Errorf("convertLittleEndianByteSliceToInt64() = %v, want %v", gotOutInt64, tt.wantOutInt64)
 			}
 		})
 	}

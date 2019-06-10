@@ -14,7 +14,7 @@ import (
 )
 
 // Convert a byte slice to a little endian int64.
-func ConvertLittleEndianByteSliceToInt64(inBytes []byte) (outInt64 int64) {
+func convertLittleEndianByteSliceToInt64(inBytes []byte) (outInt64 int64) {
 	inBytesLength := len(inBytes)
 	if inBytesLength == 0 {
 		outInt64 = 0

@@ -21,7 +21,7 @@ func TestMftFile_mftToCSV(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		file    MftFile
+		file    mftFile
 		args    args
 		wantErr bool
 	}{
@@ -30,7 +30,7 @@ func TestMftFile_mftToCSV(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.file.mftToCSV(tt.args.outFileName, tt.args.waitgroup); (err != nil) != tt.wantErr {
-				t.Errorf("MftFile.mftToCSV() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("mftFile.mftToCSV() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

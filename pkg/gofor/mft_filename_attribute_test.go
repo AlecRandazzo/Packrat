@@ -21,21 +21,21 @@ func TestMasterFileTableRecord_getFileNameAttributes(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		mftRecord     *MasterFileTableRecord
-		wantMftRecord *MasterFileTableRecord
+		mftRecord     *masterFileTableRecord
+		wantMftRecord *masterFileTableRecord
 	}{
 		{
 			name: "Testing MFT Record 0",
-			mftRecord: &MasterFileTableRecord{
-				AttributeInfo: []AttributeInfo{
+			mftRecord: &masterFileTableRecord{
+				AttributeInfo: []attributeInfo{
 					{
 						AttributeBytes: attributeBytes,
 						AttributeType:  0x30,
 					},
 				},
 			},
-			wantMftRecord: &MasterFileTableRecord{
-				FileNameAttributes: []FileNameAttributes{
+			wantMftRecord: &masterFileTableRecord{
+				FileNameAttributes: []fileNameAttributes{
 					{
 						FnCreated:               "2016-07-02T15:13:30Z",
 						FnModified:              "2016-07-02T15:13:30Z",
@@ -50,7 +50,7 @@ func TestMasterFileTableRecord_getFileNameAttributes(t *testing.T) {
 						LogicalFileSize:         16384,
 						PhysicalFileSize:        16384,
 						FileName:                "$MFT",
-						FileNameFlags: FileNameFlags{
+						FileNameFlags: fileNameFlags{
 							ReadOnly:          false,
 							Hidden:            true,
 							System:            true,
@@ -91,14 +91,14 @@ func Test_resolveFileFlags(t *testing.T) {
 	tests := []struct {
 		name            string
 		args            args
-		wantParsedFlags FileNameFlags
+		wantParsedFlags fileNameFlags
 	}{
 		{
 			name: "Testing MFT record 0",
 			args: args{
 				flagBytes: fnFlagBytes,
 			},
-			wantParsedFlags: FileNameFlags{
+			wantParsedFlags: fileNameFlags{
 				ReadOnly:          false,
 				Hidden:            true,
 				System:            true,
