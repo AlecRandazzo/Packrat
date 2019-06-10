@@ -19,16 +19,16 @@ import (
 	"syscall"
 )
 
-type Directory struct {
+type directory struct {
 	DirectoryName      string
 	ParentRecordNumber uint64
 }
 
-type DirectoryList map[uint64]Directory
+type directoryList map[uint64]directory
 
-type MappedDirectories map[uint64]string
+type mappedDirectories map[uint64]string
 
-func (mftRecord *MasterFileTableRecord) quickDirectoryCheck() {
+func (mftRecord *masterFileTableRecord) quickDirectoryCheck() {
 
 	const offsetRecordFlag = 0x16
 	const codeDirectory = 0x03
@@ -45,20 +45,20 @@ func (mftRecord *MasterFileTableRecord) quickDirectoryCheck() {
 	return
 }
 
-func (volume *VolumeHandle) createDirectoryList(dataRunQueue *chan DataRun, directoryListChannel *chan map[uint64]Directory, waitGroup *sync.WaitGroup) {
-	var directoryList DirectoryList
+func (volume *volumeHandle) createDirectoryList(dataRunQueue *chan dataRun, directoryListChannel *chan map[uint64]directory, waitGroup *sync.WaitGroup) {
+	var directoryList directoryList
 	var err error
-	directoryList = make(map[uint64]Directory)
+	directoryList = make(map[uint64]directory)
 	openChannel := true
 
 	for openChannel == true {
-		dataRun := DataRun{}
+		dataRun := dataRun{}
 		dataRun, openChannel = <-*dataRunQueue
 		bytesLeft := dataRun.Length
 		_, _ = syscall.Seek(volume.Handle, dataRun.AbsoluteOffset, 0)
 
 		for bytesLeft > 0 {
-			var mftRecord MasterFileTableRecord
+			var mftRecord masterFileTableRecord
 			buffer := make([]byte, volume.Vbr.MftRecordSize)
 			_, _ = syscall.Read(volume.Handle, buffer)
 			bytesLeft -= volume.Vbr.MftRecordSize
@@ -81,7 +81,7 @@ func (volume *VolumeHandle) createDirectoryList(dataRunQueue *chan DataRun, dire
 			}
 			for _, attribute := range mftRecord.FileNameAttributes {
 				if strings.Contains(attribute.FileNamespace, "WIN32") == true || strings.Contains(attribute.FileNamespace, "POSIX") {
-					directoryList[uint64(mftRecord.RecordHeader.RecordNumber)] = Directory{DirectoryName: attribute.FileName, ParentRecordNumber: attribute.ParentDirRecordNumber}
+					directoryList[uint64(mftRecord.RecordHeader.RecordNumber)] = directory{DirectoryName: attribute.FileName, ParentRecordNumber: attribute.ParentDirRecordNumber}
 					break
 				}
 			}
@@ -92,14 +92,14 @@ func (volume *VolumeHandle) createDirectoryList(dataRunQueue *chan DataRun, dire
 	return
 }
 
-func createDirectoryList(inboundBuffer *chan []byte, directoryListChannel *chan map[uint64]Directory, waitGroup *sync.WaitGroup) {
+func createDirectoryList(inboundBuffer *chan []byte, directoryListChannel *chan map[uint64]directory, waitGroup *sync.WaitGroup) {
 	defer waitGroup.Done()
 	var openChannel = true
-	var directoryList DirectoryList
+	var directoryList directoryList
 	var err error
-	directoryList = make(map[uint64]Directory)
+	directoryList = make(map[uint64]directory)
 	for openChannel == true {
-		var mftRecord MasterFileTableRecord
+		var mftRecord masterFileTableRecord
 		mftRecord.MftRecordBytes, openChannel = <-*inboundBuffer
 		mftRecord.quickDirectoryCheck()
 		if mftRecord.RecordHeader.FlagDirectory == false {
@@ -119,7 +119,7 @@ func createDirectoryList(inboundBuffer *chan []byte, directoryListChannel *chan 
 		for _, attribute := range mftRecord.FileNameAttributes {
 			if strings.Contains(attribute.FileNamespace, "WIN32") == true || strings.Contains(attribute.FileNamespace, "POSIX") {
 
-				directoryList[uint64(mftRecord.RecordHeader.RecordNumber)] = Directory{DirectoryName: attribute.FileName, ParentRecordNumber: attribute.ParentDirRecordNumber}
+				directoryList[uint64(mftRecord.RecordHeader.RecordNumber)] = directory{DirectoryName: attribute.FileName, ParentRecordNumber: attribute.ParentDirRecordNumber}
 				break
 			}
 		}
@@ -128,19 +128,19 @@ func createDirectoryList(inboundBuffer *chan []byte, directoryListChannel *chan 
 	return
 }
 
-func (file *MftFile) combineDirectoryInformation(directoryListChannel *chan map[uint64]Directory, waitForDirectoryCombination *sync.WaitGroup) {
+func (file *mftFile) combineDirectoryInformation(directoryListChannel *chan map[uint64]directory, waitForDirectoryCombination *sync.WaitGroup) {
 	defer waitForDirectoryCombination.Done()
 
 	file.MappedDirectories = make(map[uint64]string)
 
 	// Merge lists
-	var masterDirectoryList map[uint64]Directory
-	masterDirectoryList = make(map[uint64]Directory)
+	var masterDirectoryList map[uint64]directory
+	masterDirectoryList = make(map[uint64]directory)
 	openChannel := true
 
 	for openChannel == true {
-		var directoryList map[uint64]Directory
-		directoryList = make(map[uint64]Directory)
+		var directoryList map[uint64]directory
+		directoryList = make(map[uint64]directory)
 		directoryList, openChannel = <-*directoryListChannel
 		for key, value := range directoryList {
 			masterDirectoryList[key] = value
@@ -173,19 +173,19 @@ func (file *MftFile) combineDirectoryInformation(directoryListChannel *chan map[
 	return
 }
 
-func (volume *VolumeHandle) combineDirectoryInformation(directoryListChannel *chan map[uint64]Directory, waitForDirectoryCombination *sync.WaitGroup) {
+func (volume *volumeHandle) combineDirectoryInformation(directoryListChannel *chan map[uint64]directory, waitForDirectoryCombination *sync.WaitGroup) {
 	defer waitForDirectoryCombination.Done()
 
 	volume.MappedDirectories = make(map[uint64]string)
 
 	// Merge lists
-	var masterDirectoryList map[uint64]Directory
-	masterDirectoryList = make(map[uint64]Directory)
+	var masterDirectoryList map[uint64]directory
+	masterDirectoryList = make(map[uint64]directory)
 	openChannel := true
 
 	for openChannel == true {
-		var directoryList map[uint64]Directory
-		directoryList = make(map[uint64]Directory)
+		var directoryList map[uint64]directory
+		directoryList = make(map[uint64]directory)
 		directoryList, openChannel = <-*directoryListChannel
 		for key, value := range directoryList {
 			masterDirectoryList[key] = value
@@ -219,11 +219,11 @@ func (volume *VolumeHandle) combineDirectoryInformation(directoryListChannel *ch
 }
 
 // Builds a list of directories for the purpose of of mapping MFT records to their parent directories.
-func (file *MftFile) buildDirectoryTree() (err error) {
+func (file *mftFile) buildDirectoryTree() (err error) {
 	var waitGroup sync.WaitGroup
 	bufferChannel := make(chan []byte, 100)
 	numberOfWorkers := 4
-	directoryListChannel := make(chan map[uint64]Directory, numberOfWorkers)
+	directoryListChannel := make(chan map[uint64]directory, numberOfWorkers)
 	for i := 0; i <= numberOfWorkers; i++ {
 		waitGroup.Add(1)
 		go createDirectoryList(&bufferChannel, &directoryListChannel, &waitGroup)
@@ -261,8 +261,8 @@ func (client *CollectorClient) buildDirectoryTree() (err error) {
 	var waitGroup sync.WaitGroup
 	volumeLetter := strings.TrimRight(os.Getenv("SYSTEMDRIVE"), ":")
 
-	directoryListChannel := make(chan map[uint64]Directory, 100)
-	dataRunsQueue := make(chan DataRun, len(client.VolumeHandle.MftRecord0.DataAttributes.NonResidentDataAttributes.DataRuns))
+	directoryListChannel := make(chan map[uint64]directory, 100)
+	dataRunsQueue := make(chan dataRun, len(client.VolumeHandle.MftRecord0.DataAttributes.NonResidentDataAttributes.DataRuns))
 	for _, value := range client.VolumeHandle.MftRecord0.DataAttributes.NonResidentDataAttributes.DataRuns {
 		dataRunsQueue <- value
 	}
@@ -270,7 +270,7 @@ func (client *CollectorClient) buildDirectoryTree() (err error) {
 
 	numberOfWorkers := 4
 	for i := 0; i < numberOfWorkers; i++ {
-		newFileHandle, _ := GetVolumeHandle(volumeLetter)
+		newFileHandle, _ := getVolumeHandle(volumeLetter)
 		waitGroup.Add(1)
 		go newFileHandle.createDirectoryList(&dataRunsQueue, &directoryListChannel, &waitGroup)
 	}

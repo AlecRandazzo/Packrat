@@ -14,7 +14,7 @@ import (
 )
 
 // Parse a byte slice containing a unix timestamp and convert it to a timestamp string.
-func ParseTimestamp(timestampBytes []byte) (timestamp string) {
+func parseTimestamp(timestampBytes []byte) (timestamp string) {
 
 	var delta = time.Date(1970-369, 1, 1, 0, 0, 0, 0, time.UTC).UnixNano()
 

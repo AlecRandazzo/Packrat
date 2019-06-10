@@ -19,21 +19,21 @@ func TestMasterFileTableRecord_getStandardInformationAttribute(t *testing.T) {
 	attributeBytes, _ := hex.DecodeString("100000006000000000001800000000004800000018000000EA24CD4A74D4D101EA24CD4A74D4D101EA24CD4A74D4D101EA24CD4A74D4D10106000000000000000000000000000000000000000001000000000000000000000000000000000000")
 	tests := []struct {
 		name          string
-		mftRecord     *MasterFileTableRecord
-		wantMftRecord *MasterFileTableRecord
+		mftRecord     *masterFileTableRecord
+		wantMftRecord *masterFileTableRecord
 	}{
 		{
 			name: "Test MFT record 0.",
-			mftRecord: &MasterFileTableRecord{
-				AttributeInfo: []AttributeInfo{
+			mftRecord: &masterFileTableRecord{
+				AttributeInfo: []attributeInfo{
 					{
 						AttributeType:  0x10,
 						AttributeBytes: attributeBytes,
 					},
 				},
 			},
-			wantMftRecord: &MasterFileTableRecord{
-				StandardInformationAttributes: StandardInformationAttributes{
+			wantMftRecord: &masterFileTableRecord{
+				StandardInformationAttributes: standardInformationAttributes{
 					SiCreated:    "2016-07-02T15:13:30Z",
 					SiModified:   "2016-07-02T15:13:30Z",
 					SiAccessed:   "2016-07-02T15:13:30Z",

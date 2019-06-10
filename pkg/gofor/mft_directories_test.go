@@ -21,12 +21,12 @@ func TestMasterFileTableRecord_quickDirectoryCheck(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		mftRecord         *MasterFileTableRecord
+		mftRecord         *masterFileTableRecord
 		wantFlagDirectory bool
 	}{
 		{
 			name: "Testing MFT record 5",
-			mftRecord: &MasterFileTableRecord{
+			mftRecord: &masterFileTableRecord{
 				MftRecordBytes: mftBytes,
 			},
 			wantFlagDirectory: true,
@@ -43,7 +43,7 @@ func TestMasterFileTableRecord_quickDirectoryCheck(t *testing.T) {
 func Test_createDirectoryList(t *testing.T) {
 	type args struct {
 		inboundBuffer        *chan []byte
-		directoryListChannel *chan map[uint64]Directory
+		directoryListChannel *chan map[uint64]directory
 		waitGroup            *sync.WaitGroup
 	}
 	tests := []struct {
@@ -61,12 +61,12 @@ func Test_createDirectoryList(t *testing.T) {
 
 func TestMftFile_combineDirectoryInformation(t *testing.T) {
 	type args struct {
-		directoryListChannel        *chan map[uint64]Directory
+		directoryListChannel        *chan map[uint64]directory
 		waitForDirectoryCombination *sync.WaitGroup
 	}
 	tests := []struct {
 		name string
-		file *MftFile
+		file *mftFile
 		args args
 	}{
 		// TODO: Add test cases.
@@ -80,12 +80,12 @@ func TestMftFile_combineDirectoryInformation(t *testing.T) {
 
 func TestVolumeHandle_combineDirectoryInformation(t *testing.T) {
 	type args struct {
-		directoryListChannel        *chan map[uint64]Directory
+		directoryListChannel        *chan map[uint64]directory
 		waitForDirectoryCombination *sync.WaitGroup
 	}
 	tests := []struct {
 		name   string
-		volume *VolumeHandle
+		volume *volumeHandle
 		args   args
 	}{
 		// TODO: Add test cases.
@@ -100,7 +100,7 @@ func TestVolumeHandle_combineDirectoryInformation(t *testing.T) {
 func TestMftFile_BuildDirectoryTree(t *testing.T) {
 	tests := []struct {
 		name    string
-		file    *MftFile
+		file    *mftFile
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -108,7 +108,7 @@ func TestMftFile_BuildDirectoryTree(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.file.buildDirectoryTree(); (err != nil) != tt.wantErr {
-				t.Errorf("MftFile.buildDirectoryTree() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("mftFile.buildDirectoryTree() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -117,7 +117,7 @@ func TestMftFile_BuildDirectoryTree(t *testing.T) {
 //func TestVolumeHandle_BuildDirectoryTree(t *testing.T) {
 //	tests := []struct {
 //		name    string
-//		volume  *VolumeHandle
+//		volume  *volumeHandle
 //		wantErr bool
 //	}{
 //		// TODO: Add test cases.
@@ -125,7 +125,7 @@ func TestMftFile_BuildDirectoryTree(t *testing.T) {
 //	for _, tt := range tests {
 //		t.Run(tt.name, func(t *testing.T) {
 //			if err := tt.volume.buildDirectoryTree(); (err != nil) != tt.wantErr {
-//				t.Errorf("VolumeHandle.buildDirectoryTree() error = %v, wantErr %v", err, tt.wantErr)
+//				t.Errorf("volumeHandle.buildDirectoryTree() error = %v, wantErr %v", err, tt.wantErr)
 //			}
 //		})
 //	}

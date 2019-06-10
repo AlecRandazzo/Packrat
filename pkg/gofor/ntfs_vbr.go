@@ -15,7 +15,7 @@ import (
 	"math"
 )
 
-type VolumeBootRecord struct {
+type volumeBootRecord struct {
 	VolumeLetter           string
 	BytesPerSector         int64
 	SectorsPerCluster      int64
@@ -26,7 +26,7 @@ type VolumeBootRecord struct {
 }
 
 // Parses a byte slice containing an NTFS volume boot record (VBR)
-func ParseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr VolumeBootRecord, err error) {
+func parseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr volumeBootRecord, err error) {
 	const codeNTFSMagicNumber = "NTFS"
 	const offsetNTFSMagicNumber = 0x03
 	const lengthNTFSMagicNumber = 0x04

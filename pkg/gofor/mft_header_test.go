@@ -20,13 +20,13 @@ func TestMasterFileTableRecord_getRecordHeader(t *testing.T) {
 
 	tests := []struct {
 		name                string
-		mftRecord           *MasterFileTableRecord
+		mftRecord           *masterFileTableRecord
 		wantRecordNumber    uint32
 		wantAttributeOffset uint16
 	}{
 		{
 			name: "Testing with MFT record 0.",
-			mftRecord: &MasterFileTableRecord{
+			mftRecord: &masterFileTableRecord{
 				MftRecordBytes: mftBytes,
 			},
 			wantRecordNumber:    0,
@@ -48,13 +48,13 @@ func TestMasterFileTableRecord_getHeaderFlags(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		mftRecord         *MasterFileTableRecord
+		mftRecord         *masterFileTableRecord
 		wantFlagDeleted   bool
 		wantFlagDirectory bool
 	}{
 		{
 			name: "Testing with MFT record 0.",
-			mftRecord: &MasterFileTableRecord{
+			mftRecord: &masterFileTableRecord{
 				MftRecordBytes: mftBytes,
 			},
 			wantFlagDeleted:   false,

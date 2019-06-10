@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-type FileNameAttributes struct {
+type fileNameAttributes struct {
 	FnCreated               string
 	FnModified              string
 	FnAccessed              string
@@ -29,13 +29,13 @@ type FileNameAttributes struct {
 	ParentDirSequenceNumber uint16
 	LogicalFileSize         uint64
 	PhysicalFileSize        uint64
-	FileNameFlags           FileNameFlags
+	FileNameFlags           fileNameFlags
 	FileNameLength          byte
 	FileNamespace           string
 	FileName                string
 }
 
-type FileNameFlags struct {
+type fileNameFlags struct {
 	ReadOnly          bool
 	Hidden            bool
 	System            bool
@@ -53,7 +53,7 @@ type FileNameFlags struct {
 	IndexView         bool
 }
 
-func (mftRecord *MasterFileTableRecord) getFileNameAttributes() (err error) {
+func (mftRecord *masterFileTableRecord) getFileNameAttributes() (err error) {
 	const codeFileName = 0x30
 
 	const offsetAttributeSize = 0x04
@@ -105,7 +105,7 @@ func (mftRecord *MasterFileTableRecord) getFileNameAttributes() (err error) {
 			if len(attribute.AttributeBytes) < 0x44 {
 				return
 			}
-			var fileNameAttributes FileNameAttributes
+			var fileNameAttributes fileNameAttributes
 			fileNameAttributes.AttributeSize = binary.LittleEndian.Uint32(attribute.AttributeBytes[offsetAttributeSize : offsetAttributeSize+lengthAttributeSize])
 
 			switch attribute.AttributeBytes[offsetResidentFlag] {
@@ -136,25 +136,25 @@ func (mftRecord *MasterFileTableRecord) getFileNameAttributes() (err error) {
 
 			fileNameAttributes.ParentDirSequenceNumber = binary.LittleEndian.Uint16(attribute.AttributeBytes[offsetParentDirSequenceNumber+nameLengthOffsetModifier : offsetParentDirSequenceNumber+lengthParentDirSequenceNumber+nameLengthOffsetModifier])
 
-			fileNameAttributes.FnCreated = ParseTimestamp(attribute.AttributeBytes[offsetFnCreated+nameLengthOffsetModifier : offsetFnCreated+lengthFnCreated+nameLengthOffsetModifier])
+			fileNameAttributes.FnCreated = parseTimestamp(attribute.AttributeBytes[offsetFnCreated+nameLengthOffsetModifier : offsetFnCreated+lengthFnCreated+nameLengthOffsetModifier])
 			if fileNameAttributes.FnCreated == "" {
 				err = errors.Wrap(err, "could not parse fn created timestamp")
 				return
 			}
 
-			fileNameAttributes.FnModified = ParseTimestamp(attribute.AttributeBytes[offsetFnModified+nameLengthOffsetModifier : offsetFnModified+lengthFnModified+nameLengthOffsetModifier])
+			fileNameAttributes.FnModified = parseTimestamp(attribute.AttributeBytes[offsetFnModified+nameLengthOffsetModifier : offsetFnModified+lengthFnModified+nameLengthOffsetModifier])
 			if fileNameAttributes.FnModified == "" {
 				err = errors.Wrap(err, "could not parse fn modified timestamp")
 				return
 			}
 
-			fileNameAttributes.FnChanged = ParseTimestamp(attribute.AttributeBytes[offsetFnChanged+nameLengthOffsetModifier : offsetFnChanged+lengthFnChanged+nameLengthOffsetModifier])
+			fileNameAttributes.FnChanged = parseTimestamp(attribute.AttributeBytes[offsetFnChanged+nameLengthOffsetModifier : offsetFnChanged+lengthFnChanged+nameLengthOffsetModifier])
 			if fileNameAttributes.FnChanged == "" {
 				err = errors.Wrap(err, "could not parse fn changed timestamp")
 				return
 			}
 
-			fileNameAttributes.FnAccessed = ParseTimestamp(attribute.AttributeBytes[offsetFnAccessed+nameLengthOffsetModifier : offsetFnAccessed+lengthFnAccessed+nameLengthOffsetModifier])
+			fileNameAttributes.FnAccessed = parseTimestamp(attribute.AttributeBytes[offsetFnAccessed+nameLengthOffsetModifier : offsetFnAccessed+lengthFnAccessed+nameLengthOffsetModifier])
 			if fileNameAttributes.FnAccessed == "" {
 				err = errors.Wrap(err, "could not parse fn accessed timestamp")
 				return
@@ -192,7 +192,7 @@ func (mftRecord *MasterFileTableRecord) getFileNameAttributes() (err error) {
 	return
 }
 
-func resolveFileFlags(flagBytes []byte) (parsedFlags FileNameFlags) {
+func resolveFileFlags(flagBytes []byte) (parsedFlags fileNameFlags) {
 	unparsedFlags := binary.LittleEndian.Uint32(flagBytes)
 
 	//init values

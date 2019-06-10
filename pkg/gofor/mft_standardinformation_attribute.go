@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type StandardInformationAttributes struct {
+type standardInformationAttributes struct {
 	SiCreated    string
 	SiModified   string
 	SiAccessed   string
@@ -22,7 +22,7 @@ type StandardInformationAttributes struct {
 	FlagResident bool
 }
 
-func (mftRecord *MasterFileTableRecord) getStandardInformationAttribute() (err error) {
+func (mftRecord *masterFileTableRecord) getStandardInformationAttribute() (err error) {
 	const codeStandardInformation = 0x10
 
 	const offsetResidentFlag = 0x08
@@ -63,25 +63,25 @@ func (mftRecord *MasterFileTableRecord) getStandardInformationAttribute() (err e
 
 			// Convert timestamps from bytes to time.Time
 
-			mftRecord.StandardInformationAttributes.SiCreated = ParseTimestamp(attribute.AttributeBytes[offsetSiCreated : offsetSiCreated+lengthSiCreated])
+			mftRecord.StandardInformationAttributes.SiCreated = parseTimestamp(attribute.AttributeBytes[offsetSiCreated : offsetSiCreated+lengthSiCreated])
 			if mftRecord.StandardInformationAttributes.SiCreated == "" {
 				err = errors.Wrap(err, "could not parse si created timestamp")
 				return
 			}
 
-			mftRecord.StandardInformationAttributes.SiModified = ParseTimestamp(attribute.AttributeBytes[offsetSiModified : offsetSiModified+lengthSiModified])
+			mftRecord.StandardInformationAttributes.SiModified = parseTimestamp(attribute.AttributeBytes[offsetSiModified : offsetSiModified+lengthSiModified])
 			if mftRecord.StandardInformationAttributes.SiModified == "" {
 				err = errors.Wrap(err, "could not parse si modified timestamp")
 				return
 			}
 
-			mftRecord.StandardInformationAttributes.SiChanged = ParseTimestamp(attribute.AttributeBytes[offsetSiChanged : offsetSiChanged+lengthSiChanged])
+			mftRecord.StandardInformationAttributes.SiChanged = parseTimestamp(attribute.AttributeBytes[offsetSiChanged : offsetSiChanged+lengthSiChanged])
 			if mftRecord.StandardInformationAttributes.SiChanged == "" {
 				err = errors.Wrap(err, "could not parse si changed timestamp")
 				return
 			}
 
-			mftRecord.StandardInformationAttributes.SiAccessed = ParseTimestamp(attribute.AttributeBytes[offsetSiAccessed : offsetSiAccessed+lengthSiAccessed])
+			mftRecord.StandardInformationAttributes.SiAccessed = parseTimestamp(attribute.AttributeBytes[offsetSiAccessed : offsetSiAccessed+lengthSiAccessed])
 			if mftRecord.StandardInformationAttributes.SiAccessed == "" {
 				err = errors.Wrap(err, "could not parse si accessed timestamp")
 				return
