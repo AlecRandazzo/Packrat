@@ -58,7 +58,7 @@ func ParseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr VolumeBootRecord, 
 	vbr.MftRecordSize = int64(math.Pow(2, float64(signedTwosComplement)))
 	vbr.BytesPerCluster = vbr.SectorsPerCluster * vbr.BytesPerSector
 	valueMftClusterOffset := volumeBootRecordBytes[offsetMftClusterOffset : offsetMftClusterOffset+lengthMftClusterOffset]
-	mftClusterOffset := ConvertLittleEndianByteSliceToInt64(valueMftClusterOffset)
+	mftClusterOffset := convertLittleEndianByteSliceToInt64(valueMftClusterOffset)
 	if mftClusterOffset == 0 {
 		err = errors.Wrap(err, "failed to get mft offset clusters")
 		return

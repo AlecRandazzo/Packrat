@@ -19,7 +19,7 @@ func ParseTimestamp(timestampBytes []byte) (timestamp string) {
 	var delta = time.Date(1970-369, 1, 1, 0, 0, 0, 0, time.UTC).UnixNano()
 
 	// Convert the byte slice to little endian int64 and then convert it to a string
-	timestampInt64 := ConvertLittleEndianByteSliceToInt64(timestampBytes)
+	timestampInt64 := convertLittleEndianByteSliceToInt64(timestampBytes)
 	if timestampInt64 == 0 {
 		timestamp = ""
 		return

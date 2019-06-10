@@ -128,7 +128,7 @@ func (mftRecord *MasterFileTableRecord) getFileNameAttributes() (err error) {
 				nameLengthOffsetModifier = nameLengthOffsetModifier * 2 // x2 to account for unicode
 			}
 
-			fileNameAttributes.ParentDirRecordNumber = ConvertLittleEndianByteSliceToUInt64(attribute.AttributeBytes[offsetParentRecordNumber+nameLengthOffsetModifier : offsetParentRecordNumber+lengthParentRecordNumber+nameLengthOffsetModifier])
+			fileNameAttributes.ParentDirRecordNumber = convertLittleEndianByteSliceToUInt64(attribute.AttributeBytes[offsetParentRecordNumber+nameLengthOffsetModifier : offsetParentRecordNumber+lengthParentRecordNumber+nameLengthOffsetModifier])
 			if fileNameAttributes.ParentDirRecordNumber == 0 {
 				err = errors.Wrap(err, "failed to convert filename attribute's parent dir record number")
 				return

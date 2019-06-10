@@ -184,13 +184,13 @@ func getDataRuns(dataRunBytes []byte, bytesPerCluster int64) (dataRuns map[int]D
 			copy(offsetBytes, dataRunBytes[(offsetTracker+lengthByteCount):(offsetTracker+lengthByteCount+offsetByteCount)])
 
 			// Convert the bytes for the data run offset and length to little endian int64
-			rawDataRun.ClusterOffset = ConvertLittleEndianByteSliceToInt64(offsetBytes)
+			rawDataRun.ClusterOffset = convertLittleEndianByteSliceToInt64(offsetBytes)
 			if rawDataRun.ClusterOffset == 0 {
 				dataRuns = nil
 				return
 			}
 
-			rawDataRun.NumberOfClusters = ConvertLittleEndianByteSliceToInt64(lengthBytes)
+			rawDataRun.NumberOfClusters = convertLittleEndianByteSliceToInt64(lengthBytes)
 			if rawDataRun.NumberOfClusters == 0 {
 				dataRuns = nil
 				return
