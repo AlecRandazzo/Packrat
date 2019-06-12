@@ -7,10 +7,11 @@
  *
  */
 
-package gofor
+package GoFor
 
 import (
 	"fmt"
+	mft "github.com/AlecRandazzo/Gofor-MFT-Parser"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -20,12 +21,12 @@ import (
 	"syscall"
 )
 
-type volumeHandle struct {
+type VolumeHandle struct {
 	Handle            syscall.Handle
 	VolumeLetter      string
-	Vbr               volumeBootRecord
+	Vbr               VolumeBootRecord
 	MappedDirectories map[uint64]string
-	MftRecord0        masterFileTableRecord
+	MftRecord0        mft.MasterFileTableRecord
 }
 
 // File that you want to export.
@@ -46,7 +47,7 @@ type fileExportNameAndBytes struct {
 }
 
 // Gets a file handle to the specified volume. This handle is used to read the MFT directly and enables the copying of the MFT despite it being a locked file.
-func getVolumeHandle(volumeLetter string) (volume volumeHandle, err error) {
+func getVolumeHandle(volumeLetter string) (volume VolumeHandle, err error) {
 	const volumeBootRecordSize = 512
 
 	// Get our volume handle
@@ -75,7 +76,7 @@ func getVolumeHandle(volumeLetter string) (volume volumeHandle, err error) {
 		return
 	}
 
-	volume.Vbr, err = parseVolumeBootRecord(volumeBootRecord)
+	volume.Vbr, err = ParseVolumeBootRecord(volumeBootRecord)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to parse vbr from volume letter %s", volume.VolumeLetter)
 		return
@@ -83,7 +84,7 @@ func getVolumeHandle(volumeLetter string) (volume volumeHandle, err error) {
 	return
 }
 
-func (volume *volumeHandle) parseMFTRecord0() (err error) {
+func (volume *VolumeHandle) ParseMFTRecord0() (err error) {
 	// Move handle pointer back to beginning of volume
 	_, err = syscall.Seek(volume.Handle, 0x00, 0)
 	if err != nil {
@@ -106,14 +107,14 @@ func (volume *volumeHandle) parseMFTRecord0() (err error) {
 		return
 	}
 	volume.MftRecord0.MftRecordBytes = buffer
-	recordHeaderPresent := volume.MftRecord0.checkForRecordHeader()
+	recordHeaderPresent := volume.MftRecord0.CheckForRecordHeader()
 	if recordHeaderPresent == false {
 		return
 	}
 
 	// Everything checks out, let's copy contents of the buffer to the MasterFileRecord struct and then parse the MFT record
-	volume.MftRecord0.bytesPerCluster = volume.Vbr.BytesPerCluster
-	err = volume.MftRecord0.parseMFTRecord()
+	volume.MftRecord0.BytesPerCluster = volume.Vbr.BytesPerCluster
+	err = volume.MftRecord0.ParseMFTRecord()
 	if err != nil {
 		err = errors.Wrap(err, "failed to parse the mft's mft record")
 		return
@@ -130,7 +131,7 @@ func (client *CollectorClient) startCollecting(exportList ExportList) (err error
 	}
 
 	log.Debug("Building directory tree.")
-	err = client.buildDirectoryTree()
+	err = client.BuildDirectoryTree()
 	if err != nil {
 		err = errors.Wrap(err, "Failed to read MFT")
 		return
@@ -144,19 +145,19 @@ func (client *CollectorClient) startCollecting(exportList ExportList) (err error
 	return
 }
 
-func (client CollectorClient) mftRecordToBytes(filesToCopyQueue *chan masterFileTableRecord, fileCopyWaitGroup *sync.WaitGroup) (err error) {
+func (client CollectorClient) mftRecordToBytes(filesToCopyQueue *chan mft.MasterFileTableRecord, fileCopyWaitGroup *sync.WaitGroup) (err error) {
 	defer fileCopyWaitGroup.Done()
 	openChannel := true
 
 	volumeLetter := strings.TrimRight(os.Getenv("SYSTEMDRIVE"), ":")
-	volume := volumeHandle{}
+	volume := VolumeHandle{}
 	volume, err = getVolumeHandle(volumeLetter)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for openChannel == true {
-		var mftRecord masterFileTableRecord
+		var mftRecord mft.MasterFileTableRecord
 		mftRecord, openChannel = <-*filesToCopyQueue
 		var bytesLeft int64
 		var fileName string
@@ -190,17 +191,17 @@ func (client CollectorClient) mftRecordToBytes(filesToCopyQueue *chan masterFile
 			_, _ = syscall.Seek(volume.Handle, offset, 0)
 
 			for bytesLeftInRun > 0 && bytesLeft > 0 {
-				if bytesLeft < mftRecord.bytesPerCluster {
+				if bytesLeft < mftRecord.BytesPerCluster {
 					buffer := make([]byte, bytesLeft)
 					_, _ = syscall.Read(volume.Handle, buffer)
 					outputBytesChannel <- buffer
 					break
 				} else {
-					buffer := make([]byte, mftRecord.bytesPerCluster)
+					buffer := make([]byte, mftRecord.BytesPerCluster)
 					_, _ = syscall.Read(volume.Handle, buffer)
 					outputBytesChannel <- buffer
-					bytesLeftInRun -= mftRecord.bytesPerCluster
-					bytesLeft -= mftRecord.bytesPerCluster
+					bytesLeftInRun -= mftRecord.BytesPerCluster
+					bytesLeft -= mftRecord.BytesPerCluster
 				}
 			}
 		}

@@ -7,7 +7,7 @@
  *
  */
 
-package gofor
+package GoFor
 
 import (
 	"archive/zip"
@@ -19,7 +19,7 @@ import (
 type CollectorClient struct {
 	FileWriteQueue          chan fileExportNameAndBytes
 	waitGroup               sync.WaitGroup
-	VolumeHandle            volumeHandle
+	VolumeHandle            VolumeHandle
 	FileEqualListForFinding fileEqualListForFinding
 	FileRegexListForFinding fileRegexListForFinding
 }

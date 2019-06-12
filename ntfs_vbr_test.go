@@ -7,7 +7,7 @@
  *
  */
 
-package gofor
+package GoFor
 
 import (
 	"encoding/hex"
@@ -24,7 +24,7 @@ func TestParseVolumeBootRecord(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		wantVbr volumeBootRecord
+		wantVbr VolumeBootRecord
 		wantErr bool
 	}{
 		{
@@ -32,7 +32,7 @@ func TestParseVolumeBootRecord(t *testing.T) {
 			args: args{
 				volumeBootRecordBytes: vbrBytes,
 			},
-			wantVbr: volumeBootRecord{
+			wantVbr: VolumeBootRecord{
 				BytesPerSector:         512,
 				BytesPerCluster:        4096,
 				SectorsPerCluster:      8,
@@ -45,13 +45,13 @@ func TestParseVolumeBootRecord(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVbr, err := parseVolumeBootRecord(tt.args.volumeBootRecordBytes)
+			gotVbr, err := ParseVolumeBootRecord(tt.args.volumeBootRecordBytes)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("parseVolumeBootRecord() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ParseVolumeBootRecord() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotVbr, tt.wantVbr) {
-				t.Errorf("parseVolumeBootRecord() = %v, want %v", gotVbr, tt.wantVbr)
+				t.Errorf("ParseVolumeBootRecord() = %v, want %v", gotVbr, tt.wantVbr)
 			}
 		})
 	}

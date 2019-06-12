@@ -7,15 +7,16 @@
  *
  */
 
-package gofor
+package GoFor
 
 import (
 	"encoding/binary"
+	mft "github.com/AlecRandazzo/Gofor-MFT-Parser"
 	"github.com/pkg/errors"
 	"math"
 )
 
-type volumeBootRecord struct {
+type VolumeBootRecord struct {
 	VolumeLetter           string
 	BytesPerSector         int64
 	SectorsPerCluster      int64
@@ -26,7 +27,7 @@ type volumeBootRecord struct {
 }
 
 // Parses a byte slice containing an NTFS volume boot record (VBR)
-func parseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr volumeBootRecord, err error) {
+func ParseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr VolumeBootRecord, err error) {
 	const codeNTFSMagicNumber = "NTFS"
 	const offsetNTFSMagicNumber = 0x03
 	const lengthNTFSMagicNumber = 0x04
@@ -58,7 +59,7 @@ func parseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr volumeBootRecord, 
 	vbr.MftRecordSize = int64(math.Pow(2, float64(signedTwosComplement)))
 	vbr.BytesPerCluster = vbr.SectorsPerCluster * vbr.BytesPerSector
 	valueMftClusterOffset := volumeBootRecordBytes[offsetMftClusterOffset : offsetMftClusterOffset+lengthMftClusterOffset]
-	mftClusterOffset := convertLittleEndianByteSliceToInt64(valueMftClusterOffset)
+	mftClusterOffset := mft.ConvertLittleEndianByteSliceToInt64(valueMftClusterOffset)
 	if mftClusterOffset == 0 {
 		err = errors.Wrap(err, "failed to get mft offset clusters")
 		return
