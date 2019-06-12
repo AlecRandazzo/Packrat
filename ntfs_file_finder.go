@@ -9,7 +9,7 @@
 
 // TODO Handle different volumes elegantly
 
-package GoFor
+package GoFor_Collector
 
 import (
 	mft "github.com/AlecRandazzo/Gofor-MFT-Parser"

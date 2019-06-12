@@ -7,11 +7,12 @@
  *
  */
 
-package GoFor
+package GoFor_Collector
 
 import (
 	mft "github.com/AlecRandazzo/Gofor-MFT-Parser"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 	"sync"

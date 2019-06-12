@@ -7,7 +7,7 @@
  *
  */
 
-package GoFor
+package GoFor_Collector
 
 import (
 	"fmt"
