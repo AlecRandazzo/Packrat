@@ -10,7 +10,7 @@
 package main
 
 import (
-	"github.com/AlecRandazzo/GoFor-Collector/GoFor_Collector"
+	collector "github.com/AlecRandazzo/GoFor-Collector"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -39,10 +39,10 @@ func main() {
 		os.Exit(-1)
 	}
 
-	client := gofor.CollectorClient{}
-	var exportList gofor.ExportList
+	client := collector.CollectorClient{}
+	var exportList collector.ExportList
 	if strings.Contains(opts.DataTypesToCollect, "a") {
-		exportList = gofor.ExportList{
+		exportList = collector.ExportList{
 			{FullPath: "C:\\\\$MFT", Type: "equal"},
 			{FullPath: "C:\\Windows\\System32\\config\\SYSTEM", Type: "equal"},
 			{FullPath: "C:\\Windows\\System32\\config\\SOFTWARE", Type: "equal"},
@@ -52,18 +52,18 @@ func main() {
 		}
 	} else {
 		if strings.Contains(opts.DataTypesToCollect, "m") {
-			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\\\$MFT", Type: "equal"})
+			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\$MFT", Type: "equal"})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "r") {
-			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\Windows\\System32\\config\\SYSTEM", Type: "equal"})
-			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\Windows\\System32\\config\\SOFTWARE", Type: "equal"})
+			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\Windows\\System32\\config\\SYSTEM", Type: "equal"})
+			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\Windows\\System32\\config\\SOFTWARE", Type: "equal"})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "u") {
-			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\\\users\\\\([^\\\\]+)\\\\ntuser.dat$", Type: "regex"})
-			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\\\Users\\\\([^\\\\]+)\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\usrclass.dat$", Type: "regex"})
+			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\users\\\\([^\\\\]+)\\\\ntuser.dat$", Type: "regex"})
+			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\Users\\\\([^\\\\]+)\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\usrclass.dat$", Type: "regex"})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "e") {
-			exportList = append(exportList, gofor.FileToExport{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"})
+			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"})
 		}
 	}
 
