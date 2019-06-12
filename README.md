@@ -1,7 +1,7 @@
 [![GoDoc](https://godoc.org/github.com/AlecRandazzo/GoFor/pkg/gofor?status.png)](https://godoc.org/github.com/AlecRandazzo/GoFor/pkg/gofor) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
 
-# GoFor
-GoFor (Go Forensics) is a forensic library geared towards augmenting EDR toolsets. Unfortunately, not all EDR toolsets has the capability of collecting forensically relevant files from endpoints.
+# GoFor Collector
+GoFor (Go Forensics) Collector is geared towards augmenting EDR toolsets. Unfortunately, not all EDR toolsets has the capability of collecting forensically relevant files from endpoints. The GoFor Collector looks to remedy that.
 
 ## Usage
 
@@ -26,8 +26,3 @@ For `/g` concatenate the abbreviation characters together for what you want. The
 
 ## Future Plans
 - Add support to the GoFor collector for uploading to GCP and AWS.
-- Finish capabilities of stand alone MFT parser.
-- Develop an EVTX parser.
-- Develop a registry parser.
-- Develop a kubernetes cluster that can be deployed to GCP that will autoparse data uploaded to a storage bucket and insert the results into a BigTable cluster.
-- Develop a frontend to review and markdown forensic data stored in BigTable.

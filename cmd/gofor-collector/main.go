@@ -10,7 +10,7 @@
 package main
 
 import (
-	"github.com/AlecRandazzo/GoFor/pkg/gofor"
+	"github.com/AlecRandazzo/GoFor-Collector/GoFor_Collector"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	"os"
