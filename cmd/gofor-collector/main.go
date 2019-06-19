@@ -18,17 +18,10 @@ import (
 )
 
 type Options struct {
-	//Verbose            bool     `short:"v" long:"verbose" description:"Show verbose information."`
+	Debug string `short:"d" long:"debug" default:"" description:"Log debug information to output file."`
 	//SendTo             string   `short:"s" long:"sendto" required:"true" description:"Where to send collected files to." choice:"zip"`
 	ZipName            string `short:"z" long:"zipname" description:"Output file name for the zip." required:"true"`
 	DataTypesToCollect string `short:"g" long:"gather" default:"a" description:"Types of data to collect. Concatenate the abbreviation characters together for what you want. The order doesn't matter. Valid values are 'a' for all, 'm' for $MFT, 'r' for system registries, 'u' for user registries, 'e' for event logs. Examples: '/g mrue', '/g a'"`
-}
-
-func init() {
-	// Log configuration
-	log.SetFormatter(&log.JSONFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.ErrorLevel)
 }
 
 func main() {
@@ -37,6 +30,17 @@ func main() {
 	_, err := parsedOpts.Parse()
 	if err != nil {
 		os.Exit(-1)
+	}
+
+	log.SetFormatter(&log.JSONFormatter{})
+	if opts.Debug == "" {
+		log.SetOutput(os.Stdout)
+		log.SetLevel(log.ErrorLevel)
+	} else {
+		debugLog, _ := os.Create(opts.Debug)
+		defer debugLog.Close()
+		log.SetOutput(debugLog)
+		log.SetLevel(log.DebugLevel)
 	}
 
 	client := collector.CollectorClient{}
