@@ -11,8 +11,9 @@ package GoFor_Collector
 
 import (
 	"encoding/binary"
+	"errors"
+	"fmt"
 	mft "github.com/AlecRandazzo/Gofor-MFT-Parser"
-	"github.com/pkg/errors"
 	"math"
 )
 
@@ -52,7 +53,7 @@ func ParseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr VolumeBootRecord, 
 	vbr.SectorsPerCluster = int64(volumeBootRecordBytes[offsetSectorsPerCluster])
 	clustersPerMFTRecord := int(volumeBootRecordBytes[offsetClustersPerMFTRecord])
 	if clustersPerMFTRecord < 128 {
-		err = errors.Errorf("Clusters per MFT record is %d, which is less than 128.", clustersPerMFTRecord)
+		err = fmt.Errorf("clusters per MFT record is %d, which is less than 128", clustersPerMFTRecord)
 		return
 	}
 	signedTwosComplement := int8(volumeBootRecordBytes[0x40]) * -1
@@ -61,7 +62,7 @@ func ParseVolumeBootRecord(volumeBootRecordBytes []byte) (vbr VolumeBootRecord, 
 	valueMftClusterOffset := volumeBootRecordBytes[offsetMftClusterOffset : offsetMftClusterOffset+lengthMftClusterOffset]
 	mftClusterOffset := mft.ConvertLittleEndianByteSliceToInt64(valueMftClusterOffset)
 	if mftClusterOffset == 0 {
-		err = errors.Wrap(err, "failed to get mft offset clusters")
+		err = fmt.Errorf("failed to get mft offset clusters: %w", err)
 		return
 	}
 	vbr.MftByteOffset = mftClusterOffset * vbr.BytesPerCluster

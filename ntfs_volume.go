@@ -12,7 +12,6 @@ package GoFor_Collector
 import (
 	"fmt"
 	mft "github.com/AlecRandazzo/Gofor-MFT-Parser"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"regexp"
@@ -54,7 +53,7 @@ func getVolumeHandle(volumeLetter string) (volume VolumeHandle, err error) {
 	volume.VolumeLetter = volumeLetter
 	volumePath, err := syscall.UTF16PtrFromString(fmt.Sprintf("\\\\.\\%s:", volume.VolumeLetter))
 	if err != nil {
-		err = errors.Wrap(err, "failed to format volume path for syscall")
+		err = fmt.Errorf("failed to format volume path for syscall: %w", err)
 		return
 	}
 
@@ -64,7 +63,7 @@ func getVolumeHandle(volumeLetter string) (volume VolumeHandle, err error) {
 	dwFlagsAndAttributes := uint32(0x00)
 	volume.Handle, err = syscall.CreateFile(volumePath, dwDesiredAccess, dwShareMode, nil, dwCreationDisposition, dwFlagsAndAttributes, int32(0))
 	if err != nil {
-		err = errors.Wrapf(err, "failed to get handle to volume %s", volume.VolumeLetter)
+		err = fmt.Errorf("failed to get handle to volume %s: %w", volume.VolumeLetter, err)
 		return
 	}
 
@@ -72,13 +71,13 @@ func getVolumeHandle(volumeLetter string) (volume VolumeHandle, err error) {
 	volumeBootRecord := make([]byte, volumeBootRecordSize)
 	_, err = syscall.Read(volume.Handle, volumeBootRecord)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to read %s", volume.VolumeLetter)
+		err = fmt.Errorf("failed to read %s: %w", volume.VolumeLetter, err)
 		return
 	}
 
 	volume.Vbr, err = ParseVolumeBootRecord(volumeBootRecord)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to parse vbr from volume letter %s", volume.VolumeLetter)
+		err = fmt.Errorf("failed to parse vbr from volume letter %s: %w", volume.VolumeLetter, err)
 		return
 	}
 	return
@@ -88,14 +87,14 @@ func (volume *VolumeHandle) ParseMFTRecord0() (err error) {
 	// Move handle pointer back to beginning of volume
 	_, err = syscall.Seek(volume.Handle, 0x00, 0)
 	if err != nil {
-		err = errors.Wrap(err, "failed to see back to volume offset 0x00")
+		err = fmt.Errorf("failed to see back to volume offset 0x00: %w", err)
 		return
 	}
 
 	// Seek to the offset where the MFT starts. If it errors, bomb.
 	_, err = syscall.Seek(volume.Handle, volume.Vbr.MftByteOffset, 0)
 	if err != nil {
-		err = errors.Wrap(err, "failed to seek to mft")
+		err = fmt.Errorf("failed to seek to mft: %w", err)
 		return
 	}
 
@@ -103,7 +102,7 @@ func (volume *VolumeHandle) ParseMFTRecord0() (err error) {
 	buffer := make([]byte, volume.Vbr.MftRecordSize)
 	_, err = syscall.Read(volume.Handle, buffer)
 	if err != nil {
-		err = errors.Wrap(err, "failed to read the mft")
+		err = fmt.Errorf("failed to read the mft: %w", err)
 		return
 	}
 	volume.MftRecord0.MftRecordBytes = buffer
@@ -116,7 +115,7 @@ func (volume *VolumeHandle) ParseMFTRecord0() (err error) {
 	volume.MftRecord0.BytesPerCluster = volume.Vbr.BytesPerCluster
 	err = volume.MftRecord0.ParseMFTRecord()
 	if err != nil {
-		err = errors.Wrap(err, "failed to parse the mft's mft record")
+		err = fmt.Errorf("failed to parse the mft's mft record: %w", err)
 		return
 	}
 	return
@@ -133,13 +132,13 @@ func (client *CollectorClient) startCollecting(exportList ExportList) (err error
 	log.Debug("Building directory tree.")
 	err = client.BuildDirectoryTree()
 	if err != nil {
-		err = errors.Wrap(err, "Failed to read MFT")
+		err = fmt.Errorf("failed to read MFT: %w", err)
 		return
 	}
 	log.Debugf("Searching the MFT for the following files: %+v", exportList)
 	err = client.findFiles()
 	if err != nil {
-		err = errors.Wrap(err, "failed to findfiles")
+		err = fmt.Errorf("failed to findfiles: %w", err)
 		return
 	}
 	return

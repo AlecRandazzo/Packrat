@@ -10,8 +10,8 @@
 package GoFor_Collector
 
 import (
+	"fmt"
 	mft "github.com/AlecRandazzo/Gofor-MFT-Parser"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
@@ -23,7 +23,7 @@ import (
 func (client *CollectorClient) BuildDirectoryTree() (err error) {
 	err = client.VolumeHandle.ParseMFTRecord0()
 	if err != nil {
-		err = errors.Wrap(err, "Failed to parse MFTRecord0")
+		err = fmt.Errorf("failed to parse MFTRecord0: %w", err)
 		return
 	}
 	var waitGroup sync.WaitGroup
