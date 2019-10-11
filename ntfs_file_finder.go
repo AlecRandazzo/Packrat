@@ -9,7 +9,7 @@
 
 // TODO Handle different volumes elegantly
 
-package GoFor_Collector
+package GoFor_Windows_Collector
 
 import (
 	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
@@ -43,7 +43,7 @@ func (client *CollectorClient) findFilesInDataRun(newVolumeHandle *VolumeHandler
 			buffer := make([]byte, newVolumeHandle.Vbr.MftRecordSize)
 			_, _ = syscall.Read(newVolumeHandle.Handle, buffer)
 
-			mftRecord, _ := mft.RawMasterFileTableRecord(buffer).Parse()
+			mftRecord, _ := mft.RawMasterFileTableRecord(buffer).Parse(client.VolumeHandler.Vbr.BytesPerCluster)
 			if len(mftRecord.FileNameAttributes) == 0 {
 				bytesLeft -= newVolumeHandle.Vbr.MftRecordSize
 				continue

@@ -10,7 +10,7 @@
 package main
 
 import (
-	collector "github.com/AlecRandazzo/GoFor-Collector"
+	collector "github.com/AlecRandazzo/GoFor-Windows-Collector"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	"os"

@@ -7,7 +7,7 @@
  *
  */
 
-package GoFor_Collector
+package GoFor_Windows_Collector
 
 import (
 	"errors"
@@ -191,7 +191,8 @@ func (client *CollectorClient) startCollecting(exportList ExportList) (err error
 			VolumeHandler: client.VolumeHandler,
 			DataRun:       dataRun,
 		}
-		tempUnresolvedDirectoryTree, err := mft.BuildUnresolvedDirectoryTree(dataRunReader)
+		tempUnresolvedDirectoryTree := mft.UnresolvedDirectoryTree{}
+		tempUnresolvedDirectoryTree, err = mft.BuildUnresolvedDirectoryTree(dataRunReader)
 		if err != nil {
 			log.Println(err)
 			return
