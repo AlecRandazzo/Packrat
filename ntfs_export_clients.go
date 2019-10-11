@@ -19,7 +19,7 @@ import (
 type CollectorClient struct {
 	FileWriteQueue          chan fileExportNameAndBytes
 	waitGroup               sync.WaitGroup
-	VolumeHandle            VolumeHandle
+	VolumeHandler           VolumeHandler
 	FileEqualListForFinding fileEqualListForFinding
 	FileRegexListForFinding fileRegexListForFinding
 }

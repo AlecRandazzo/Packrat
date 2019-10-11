@@ -10,20 +10,23 @@
 package GoFor_Collector
 
 import (
+	"errors"
 	"fmt"
-	mft "github.com/AlecRandazzo/Gofor-MFT-Parser"
+	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
+	vbr "github.com/AlecRandazzo/GoFor-VBR-Parser"
 	log "github.com/sirupsen/logrus"
+	syscall "golang.org/x/sys/windows"
+	"io"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
-	"syscall"
 )
 
-type VolumeHandle struct {
+type VolumeHandler struct {
 	Handle            syscall.Handle
 	VolumeLetter      string
-	Vbr               VolumeBootRecord
+	Vbr               vbr.VolumeBootRecord
 	MappedDirectories map[uint64]string
 	MftRecord0        mft.MasterFileTableRecord
 }
@@ -45,25 +48,33 @@ type fileExportNameAndBytes struct {
 	outputBytesChannel chan []byte
 }
 
-// Gets a file handle to the specified volume. This handle is used to read the MFT directly and enables the copying of the MFT despite it being a locked file.
-func getVolumeHandle(volumeLetter string) (volume VolumeHandle, err error) {
-	const volumeBootRecordSize = 512
+type DataRunReader struct {
+	VolumeHandler VolumeHandler
+	DataRun       mft.DataRun
+}
 
-	// Get our volume handle
-	volume.VolumeLetter = volumeLetter
-	volumePath, err := syscall.UTF16PtrFromString(fmt.Sprintf("\\\\.\\%s:", volume.VolumeLetter))
-	if err != nil {
-		err = fmt.Errorf("failed to format volume path for syscall: %w", err)
-		return
-	}
-
+func getHandle(volumeLetter string) (handle syscall.Handle, err error) {
 	dwDesiredAccess := uint32(0x80000000) //0x80 FILE_READ_ATTRIBUTES
 	dwShareMode := uint32(0x02 | 0x01)
 	dwCreationDisposition := uint32(0x03)
 	dwFlagsAndAttributes := uint32(0x00)
-	volume.Handle, err = syscall.CreateFile(volumePath, dwDesiredAccess, dwShareMode, nil, dwCreationDisposition, dwFlagsAndAttributes, int32(0))
+
+	volumePath, _ := syscall.UTF16PtrFromString(fmt.Sprintf("\\\\.\\%s:", volumeLetter))
+	handle, err = syscall.CreateFile(volumePath, dwDesiredAccess, dwShareMode, nil, dwCreationDisposition, dwFlagsAndAttributes, 0)
 	if err != nil {
-		err = fmt.Errorf("failed to get handle to volume %s: %w", volume.VolumeLetter, err)
+		err = fmt.Errorf("getHandle() failed to get handle to volume %s: %w", volumeLetter, err)
+		return
+	}
+	return
+}
+
+// Gets a file handle to the specified volume. This handle is used to read the MFT directly and enables the copying of the MFT despite it being a locked file.
+func GetVolumeHandle(volumeLetter string) (volume VolumeHandler, err error) {
+	const volumeBootRecordSize = 512
+
+	volume.Handle, err = getHandle(volumeLetter)
+	if err != nil {
+		err = fmt.Errorf("GetVolumeHandle() failed to get handle to volume %s: %w", volume.VolumeLetter, err)
 		return
 	}
 
@@ -74,16 +85,15 @@ func getVolumeHandle(volumeLetter string) (volume VolumeHandle, err error) {
 		err = fmt.Errorf("failed to read %s: %w", volume.VolumeLetter, err)
 		return
 	}
-
-	volume.Vbr, err = ParseVolumeBootRecord(volumeBootRecord)
+	volume.Vbr, err = vbr.RawVolumeBootRecord(volumeBootRecord).Parse()
 	if err != nil {
-		err = fmt.Errorf("failed to parse vbr from volume letter %s: %w", volume.VolumeLetter, err)
+		err = fmt.Errorf("GetVolumeHandle() failed to parse vbr from volume letter %s: %w", volume.VolumeLetter, err)
 		return
 	}
 	return
 }
 
-func (volume *VolumeHandle) ParseMFTRecord0() (err error) {
+func (volume *VolumeHandler) ParseMFTRecord0() (err error) {
 	// Move handle pointer back to beginning of volume
 	_, err = syscall.Seek(volume.Handle, 0x00, 0)
 	if err != nil {
@@ -105,36 +115,95 @@ func (volume *VolumeHandle) ParseMFTRecord0() (err error) {
 		err = fmt.Errorf("failed to read the mft: %w", err)
 		return
 	}
-	volume.MftRecord0.MftRecordBytes = buffer
-	recordHeaderPresent := volume.MftRecord0.CheckForRecordHeader()
-	if recordHeaderPresent == false {
+
+	// Sanity check that this is indeed an mft record
+	result, err := mft.RawMasterFileTableRecord(buffer).IsThisAnMftRecord()
+	if err != nil {
+		err = fmt.Errorf("IsThisAnMftRecord() returned an error: %v", err)
+	} else if result == false {
+		err = errors.New("VolumeHandler.ParseMFTRecord0() received an invalid mft record")
 		return
 	}
 
-	// Everything checks out, let's copy contents of the buffer to the MasterFileRecord struct and then parse the MFT record
-	volume.MftRecord0.BytesPerCluster = volume.Vbr.BytesPerCluster
-	err = volume.MftRecord0.ParseMFTRecord()
+	// Parse the MFT record
+
+	volume.MftRecord0, err = mft.RawMasterFileTableRecord(buffer).Parse(volume.Vbr.BytesPerCluster)
 	if err != nil {
-		err = fmt.Errorf("failed to parse the mft's mft record: %w", err)
+		err = fmt.Errorf("VolumeHandler.ParseMFTRecord0() failed to parse the mft's mft record: %w", err)
 		return
 	}
 	return
 }
+
+func (dataRunReader DataRunReader) Read(byteSliceToPopulate []byte) (bytesWritten int, err error) {
+	// Get current offset
+	currentOffset, err := syscall.Seek(dataRunReader.VolumeHandler.Handle, 0, 1)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Calculate range current offset needs to be in
+	dataRunMin := dataRunReader.DataRun.AbsoluteOffset
+	dataRunMax := dataRunReader.DataRun.AbsoluteOffset + (dataRunReader.DataRun.Length * dataRunReader.VolumeHandler.Vbr.BytesPerCluster)
+
+	// Check to see if the offset is outside of the range
+	if currentOffset < dataRunMin || currentOffset > dataRunMax {
+		// Seek to the beginning of the data run
+		_, err = syscall.Seek(dataRunReader.VolumeHandler.Handle, dataRunReader.DataRun.AbsoluteOffset, 0)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
+	// Read the data
+	bytesWritten, err = syscall.Read(dataRunReader.VolumeHandler.Handle, byteSliceToPopulate)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Get the new current offset
+	currentOffset, err = syscall.Seek(dataRunReader.VolumeHandler.Handle, 0, 1)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Check if the new offset is now beyond the scope of the data run. If it is set err to io.EOF
+	if currentOffset > dataRunMax {
+		err = io.EOF
+	}
+
+	return
+}
+
 func (client *CollectorClient) startCollecting(exportList ExportList) (err error) {
 	client.FileEqualListForFinding, client.FileRegexListForFinding, err = buildFileExportLists(exportList)
 
 	volumeLetter := strings.TrimRight(os.Getenv("SYSTEMDRIVE"), ":")
-	client.VolumeHandle, err = getVolumeHandle(volumeLetter)
+	client.VolumeHandler, err = GetVolumeHandle(volumeLetter)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	log.Debug("Building directory tree.")
-	err = client.BuildDirectoryTree()
-	if err != nil {
-		err = fmt.Errorf("failed to read MFT: %w", err)
-		return
+	unresolvedDirectoryTree := mft.UnresolvedDirectoryTree{}
+	for _, dataRun := range client.VolumeHandler.MftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns {
+		dataRunReader := DataRunReader{
+			VolumeHandler: client.VolumeHandler,
+			DataRun:       dataRun,
+		}
+		tempUnresolvedDirectoryTree, err := mft.BuildUnresolvedDirectoryTree(dataRunReader)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		// Merge temporary directory tree with the master tree
+		for recordNumber, directory := range tempUnresolvedDirectoryTree {
+			unresolvedDirectoryTree[recordNumber] = directory
+		}
 	}
+	client.VolumeHandler.MappedDirectories = unresolvedDirectoryTree.Resolve()
+
 	log.Debugf("Searching the MFT for the following files: %+v", exportList)
 	err = client.findFiles()
 	if err != nil {
@@ -149,8 +218,8 @@ func (client CollectorClient) mftRecordToBytes(filesToCopyQueue *chan mft.Master
 	openChannel := true
 
 	volumeLetter := strings.TrimRight(os.Getenv("SYSTEMDRIVE"), ":")
-	volume := VolumeHandle{}
-	volume, err = getVolumeHandle(volumeLetter)
+	volume := VolumeHandler{}
+	volume, err = GetVolumeHandle(volumeLetter)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -162,10 +231,10 @@ func (client CollectorClient) mftRecordToBytes(filesToCopyQueue *chan mft.Master
 		var fileName string
 		for _, attribute := range mftRecord.FileNameAttributes {
 			if strings.Contains(attribute.FileNamespace, "WIN32") == true || strings.Contains(attribute.FileNamespace, "POSIX") == true {
-				fileName = strings.Replace(client.VolumeHandle.MappedDirectories[attribute.ParentDirRecordNumber]+"_"+attribute.FileName, "\\", "_", -1)
+				fileName = strings.Replace(client.VolumeHandler.MappedDirectories[attribute.ParentDirRecordNumber]+"_"+attribute.FileName, "\\", "_", -1)
 				fileName = strings.Replace(fileName, ":", "_", -1)
 				if attribute.LogicalFileSize == 0 || attribute.FileName == "$MFT" {
-					for _, value := range mftRecord.DataAttributes.NonResidentDataAttributes.DataRuns {
+					for _, value := range mftRecord.DataAttribute.NonResidentDataAttribute.DataRuns {
 						bytesLeft = bytesLeft + value.Length
 					}
 				} else {
@@ -184,23 +253,23 @@ func (client CollectorClient) mftRecordToBytes(filesToCopyQueue *chan mft.Master
 
 		client.FileWriteQueue <- fileExportNameAndBytes
 
-		for i := 0; i < len(mftRecord.DataAttributes.NonResidentDataAttributes.DataRuns); i++ {
-			offset := mftRecord.DataAttributes.NonResidentDataAttributes.DataRuns[i].AbsoluteOffset
-			bytesLeftInRun := mftRecord.DataAttributes.NonResidentDataAttributes.DataRuns[i].Length
+		for i := 0; i < len(mftRecord.DataAttribute.NonResidentDataAttribute.DataRuns); i++ {
+			offset := mftRecord.DataAttribute.NonResidentDataAttribute.DataRuns[i].AbsoluteOffset
+			bytesLeftInRun := mftRecord.DataAttribute.NonResidentDataAttribute.DataRuns[i].Length
 			_, _ = syscall.Seek(volume.Handle, offset, 0)
 
 			for bytesLeftInRun > 0 && bytesLeft > 0 {
-				if bytesLeft < mftRecord.BytesPerCluster {
+				if bytesLeft < client.VolumeHandler.Vbr.BytesPerCluster {
 					buffer := make([]byte, bytesLeft)
 					_, _ = syscall.Read(volume.Handle, buffer)
 					outputBytesChannel <- buffer
 					break
 				} else {
-					buffer := make([]byte, mftRecord.BytesPerCluster)
+					buffer := make([]byte, client.VolumeHandler.Vbr.BytesPerCluster)
 					_, _ = syscall.Read(volume.Handle, buffer)
 					outputBytesChannel <- buffer
-					bytesLeftInRun -= mftRecord.BytesPerCluster
-					bytesLeft -= mftRecord.BytesPerCluster
+					bytesLeftInRun -= client.VolumeHandler.Vbr.BytesPerCluster
+					bytesLeft -= client.VolumeHandler.Vbr.BytesPerCluster
 				}
 			}
 		}
