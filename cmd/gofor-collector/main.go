@@ -14,6 +14,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"runtime"
 	"strings"
 )
 
@@ -22,6 +23,12 @@ type Options struct {
 	//SendTo             string   `short:"s" long:"sendto" required:"true" description:"Where to send collected files to." choice:"zip"`
 	ZipName            string `short:"z" long:"zipname" description:"Output file name for the zip." required:"true"`
 	DataTypesToCollect string `short:"g" long:"gather" default:"a" description:"Types of data to collect. Concatenate the abbreviation characters together for what you want. The order doesn't matter. Valid values are 'a' for all, 'm' for $MFT, 'r' for system registries, 'u' for user registries, 'e' for event logs. Examples: '/g mrue', '/g a'"`
+}
+
+func init() {
+	// Log configuration
+	log.SetFormatter(&log.JSONFormatter{})
+	runtime.GOMAXPROCS(1)
 }
 
 func main() {
@@ -70,6 +77,5 @@ func main() {
 			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"})
 		}
 	}
-
 	client.ExportToZip(exportList, opts.ZipName)
 }

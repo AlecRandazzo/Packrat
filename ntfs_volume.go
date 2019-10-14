@@ -7,7 +7,7 @@
  *
  */
 
-package GoFor_Windows_Collector
+package windowscollector
 
 import (
 	"errors"
@@ -71,7 +71,6 @@ func getHandle(volumeLetter string) (handle syscall.Handle, err error) {
 // Gets a file handle to the specified volume. This handle is used to read the MFT directly and enables the copying of the MFT despite it being a locked file.
 func GetVolumeHandle(volumeLetter string) (volume VolumeHandler, err error) {
 	const volumeBootRecordSize = 512
-
 	volume.Handle, err = getHandle(volumeLetter)
 	if err != nil {
 		err = fmt.Errorf("GetVolumeHandle() failed to get handle to volume %s: %w", volume.VolumeLetter, err)
@@ -132,10 +131,12 @@ func (volume *VolumeHandler) ParseMFTRecord0() (err error) {
 		err = fmt.Errorf("VolumeHandler.ParseMFTRecord0() failed to parse the mft's mft record: %w", err)
 		return
 	}
+	log.Debugf("Identified the following data runs for the MFT itself: %+v", volume.MftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns)
+
 	return
 }
 
-func (dataRunReader DataRunReader) Read(byteSliceToPopulate []byte) (bytesWritten int, err error) {
+func (dataRunReader *DataRunReader) Read(byteSliceToPopulate []byte) (bytesWritten int, err error) {
 	// Get current offset
 	currentOffset, err := syscall.Seek(dataRunReader.VolumeHandler.Handle, 0, 1)
 	if err != nil {
@@ -144,7 +145,7 @@ func (dataRunReader DataRunReader) Read(byteSliceToPopulate []byte) (bytesWritte
 
 	// Calculate range current offset needs to be in
 	dataRunMin := dataRunReader.DataRun.AbsoluteOffset
-	dataRunMax := dataRunReader.DataRun.AbsoluteOffset + (dataRunReader.DataRun.Length * dataRunReader.VolumeHandler.Vbr.BytesPerCluster)
+	dataRunMax := dataRunReader.DataRun.AbsoluteOffset + dataRunReader.DataRun.Length
 
 	// Check to see if the offset is outside of the range
 	if currentOffset < dataRunMin || currentOffset > dataRunMax {
@@ -178,32 +179,43 @@ func (dataRunReader DataRunReader) Read(byteSliceToPopulate []byte) (bytesWritte
 func (client *CollectorClient) startCollecting(exportList ExportList) (err error) {
 	client.FileEqualListForFinding, client.FileRegexListForFinding, err = buildFileExportLists(exportList)
 
-	volumeLetter := strings.TrimRight(os.Getenv("SYSTEMDRIVE"), ":")
-	client.VolumeHandler, err = GetVolumeHandle(volumeLetter)
+	client.VolumeHandler.VolumeLetter = "C"
+	client.VolumeHandler, err = GetVolumeHandle(client.VolumeHandler.VolumeLetter)
 	if err != nil {
 		log.Fatal(err)
+	}
+	err = client.VolumeHandler.ParseMFTRecord0()
+	if err != nil {
+		err = fmt.Errorf("VolumeHandler.ParseMFTRecord0() failed: %v", err)
 	}
 
 	log.Debug("Building directory tree.")
 	unresolvedDirectoryTree := mft.UnresolvedDirectoryTree{}
-	for _, dataRun := range client.VolumeHandler.MftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns {
+	dataRunNumber := 0
+	numberOfDataRuns := len(client.VolumeHandler.MftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns)
+
+	for dataRunNumber < numberOfDataRuns {
 		dataRunReader := DataRunReader{
 			VolumeHandler: client.VolumeHandler,
-			DataRun:       dataRun,
+			DataRun:       client.VolumeHandler.MftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns[dataRunNumber],
 		}
+		dataRunNumber += 1
 		tempUnresolvedDirectoryTree := mft.UnresolvedDirectoryTree{}
-		tempUnresolvedDirectoryTree, err = mft.BuildUnresolvedDirectoryTree(dataRunReader)
+		tempUnresolvedDirectoryTree, err = mft.BuildUnresolvedDirectoryTree(&dataRunReader)
 		if err != nil {
 			log.Println(err)
 			return
 		}
+		log.Debugf("Found %v directories that need resolution in the MFT datarun %+v. Adding these to the master unresolved directory tracker.", len(tempUnresolvedDirectoryTree), dataRunReader.DataRun)
 
 		// Merge temporary directory tree with the master tree
 		for recordNumber, directory := range tempUnresolvedDirectoryTree {
 			unresolvedDirectoryTree[recordNumber] = directory
 		}
 	}
-	client.VolumeHandler.MappedDirectories = unresolvedDirectoryTree.Resolve()
+
+	client.VolumeHandler.MappedDirectories, _ = unresolvedDirectoryTree.Resolve(client.VolumeHandler.VolumeLetter)
+	log.Debugf("Resolved %v directories.", len(client.VolumeHandler.MappedDirectories))
 
 	log.Debugf("Searching the MFT for the following files: %+v", exportList)
 	err = client.findFiles()

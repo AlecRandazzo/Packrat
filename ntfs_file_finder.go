@@ -9,7 +9,7 @@
 
 // TODO Handle different volumes elegantly
 
-package GoFor_Windows_Collector
+package windowscollector
 
 import (
 	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
@@ -36,7 +36,7 @@ func (client *CollectorClient) findFilesInDataRun(newVolumeHandle *VolumeHandler
 	for openChannel == true {
 		dataRun := mft.DataRun{}
 		dataRun, openChannel = <-*dataRunsQueue
-		log.Debugf("Searching for files in the following datarun: %+v", dataRun)
+		log.Debugf("Searching for files in the following MFT datarun: %+v", dataRun)
 		bytesLeft := dataRun.Length
 		_, _ = syscall.Seek(newVolumeHandle.Handle, dataRun.AbsoluteOffset, 0)
 		for bytesLeft > 0 {
@@ -90,9 +90,9 @@ func (client *CollectorClient) findFiles() (err error) {
 
 	workerCount := 1
 	for i := 0; i < workerCount; i++ {
-		volumeLetter := strings.TrimRight(os.Getenv("SYSTEMDRIVE"), ":")
+		client.VolumeHandler.VolumeLetter = strings.TrimRight(os.Getenv("SYSTEMDRIVE"), ":")
 		newVolumeHandle := VolumeHandler{}
-		newVolumeHandle, _ = GetVolumeHandle(volumeLetter)
+		newVolumeHandle, _ = GetVolumeHandle(client.VolumeHandler.VolumeLetter)
 		newVolumeHandle.MappedDirectories = client.VolumeHandler.MappedDirectories
 		fileCopyWaitGroup.Add(1)
 		go client.findFilesInDataRun(&newVolumeHandle, &dataRunsQueue, &fileCopyWaitGroup)

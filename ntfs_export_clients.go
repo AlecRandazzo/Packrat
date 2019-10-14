@@ -7,7 +7,7 @@
  *
  */
 
-package GoFor_Windows_Collector
+package windowscollector
 
 import (
 	"archive/zip"
