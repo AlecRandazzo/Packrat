@@ -14,7 +14,6 @@ import (
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"runtime"
 	"strings"
 )
 
@@ -28,7 +27,7 @@ type Options struct {
 func init() {
 	// Log configuration
 	log.SetFormatter(&log.JSONFormatter{})
-	runtime.GOMAXPROCS(1)
+	// runtime.GOMAXPROCS(1)
 }
 
 func main() {
@@ -50,7 +49,6 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	client := collector.CollectorClient{}
 	var exportList collector.ExportList
 	if strings.Contains(opts.DataTypesToCollect, "a") {
 		exportList = collector.ExportList{
@@ -77,5 +75,11 @@ func main() {
 			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"})
 		}
 	}
-	client.ExportToZip(exportList, opts.ZipName)
+
+	resultWriter := collector.ZipResultWriter{ZipFileName: "out.zip"}
+
+	err = collector.Collect("C", exportList, resultWriter)
+	if err != nil {
+		log.Panic(err)
+	}
 }
