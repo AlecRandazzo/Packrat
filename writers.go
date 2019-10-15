@@ -32,7 +32,7 @@ type fileReader struct {
 }
 
 type ResultWriter interface {
-	ResultWriter(fileReaders *chan fileReader, waitGroup *sync.WaitGroup) (err error)
+	ResultWriter(fileReaders *chan fileReader, waitGroup *sync.WaitGroup, waitForFileCopying *sync.WaitGroup) (err error)
 }
 
 type ZipResultWriter struct {
@@ -40,7 +40,7 @@ type ZipResultWriter struct {
 }
 
 // ResultWriter collects target files and writes them to a zip file.
-func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader, waitGroup *sync.WaitGroup) (err error) {
+func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader, waitForInitialization *sync.WaitGroup, waitForFileCopying *sync.WaitGroup) (err error) {
 	// Sanity checks
 	if zipResultWriter.ZipFileName == "" {
 		err = errors.New("ZipResultWriter did not have a ZipFileName set")
@@ -53,7 +53,7 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 		return
 	}
 	defer zipFileHandle.Close()
-	waitGroup.Done()
+	waitForInitialization.Done()
 
 	zipWriter := zip.NewWriter(zipFileHandle)
 	defer zipWriter.Close()
@@ -76,6 +76,7 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 		}
 		log.Debugf("Written a total of %v bytes for the file %v", writtenCounter, reader.fullPath)
 	}
+	waitForFileCopying.Done()
 	err = nil
 	return
 }

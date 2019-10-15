@@ -55,36 +55,22 @@ func parseMFTRecord0(volume VolumeHandler) (mftRecord0 mft.MasterFileTableRecord
 
 func buildDirectoryTree(volumeHandler VolumeHandler, mftRecord0 mft.MasterFileTableRecord) (directoryTree mft.DirectoryTree, err error) {
 	log.Debugf("Building directory tree for volume %v", volumeHandler.VolumeLetter)
-	unresolvedDirectoryTree := mft.UnresolvedDirectoryTree{}
-	dataRunNumber := 0
-	numberOfDataRuns := len(mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns)
-
-	for dataRunNumber < numberOfDataRuns {
-		dataRunReader := DataRunsReader{
-			VolumeHandler:          volumeHandler,
-			DataRuns:               mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns,
-			fileName:               "$MFT",
-			dataRunTracker:         0,
-			bytesLeftToReadTracker: 0,
-			initialized:            false,
-		}
-		dataRunNumber++
-		tempUnresolvedDirectoryTree := mft.UnresolvedDirectoryTree{}
-		tempUnresolvedDirectoryTree, err = mft.BuildUnresolvedDirectoryTree(&dataRunReader)
-		if err != nil {
-			err = fmt.Errorf("failed to build an unresolved directory tree for mft data starting at datarun %+v", dataRunReader.DataRuns)
-			return
-		}
-		log.Debugf("Found %v directories that need resolution in the MFT datarun %+v. Adding these to the master unresolved directory tracker.", len(tempUnresolvedDirectoryTree), dataRunReader.DataRuns)
-
-		// Merge temporary directory tree with the master tree
-		for recordNumber, directory := range tempUnresolvedDirectoryTree {
-			unresolvedDirectoryTree[recordNumber] = directory
-		}
+	dataRunsReader := DataRunsReader{
+		VolumeHandler:          volumeHandler,
+		DataRuns:               mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns,
+		fileName:               "$MFT",
+		dataRunTracker:         0,
+		bytesLeftToReadTracker: 0,
+		initialized:            false,
 	}
-
+	unresolvedDirectoryTree, err := mft.BuildUnresolvedDirectoryTree(&dataRunsReader)
+	if err != nil {
+		err = errors.New("failed to build an unresolved directory tree for mft data starting at datarun")
+		return
+	}
+	log.Debugf("Found %d directories that need resolution.", len(unresolvedDirectoryTree))
 	directoryTree, _ = unresolvedDirectoryTree.Resolve(volumeHandler.VolumeLetter)
-	log.Debugf("Resolved %v directories.", len(directoryTree))
+	log.Debugf("Resolved %d directories.", len(directoryTree))
 
 	return
 }

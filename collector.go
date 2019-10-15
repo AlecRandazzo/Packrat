@@ -43,14 +43,15 @@ func Collect(volumeLetter string, exportList ExportList, resultWriter ResultWrit
 func copyFiles(volumeHandler VolumeHandler, foundFiles foundFiles, resultWriter ResultWriter) (err error) {
 	// Init a few things
 	fileReaders := make(chan fileReader, 100)
-	waitGroup := sync.WaitGroup{}
+	waitForInitialization := sync.WaitGroup{}
+	waitForFileCopying := sync.WaitGroup{}
 
-	// Initiate the resultWriter. We are using the wait group for catching any setup errors from the go routine.
-	waitGroup.Add(1)
+	waitForInitialization.Add(1)
+	waitForFileCopying.Add(1)
 	go func() {
-		err = resultWriter.ResultWriter(&fileReaders, &waitGroup)
+		err = resultWriter.ResultWriter(&fileReaders, &waitForInitialization, &waitForFileCopying)
 	}()
-	waitGroup.Wait()
+	waitForInitialization.Wait()
 	if err != nil {
 		err = fmt.Errorf("failed to setup resultWriter: %v", err)
 		return
@@ -73,7 +74,7 @@ func copyFiles(volumeHandler VolumeHandler, foundFiles foundFiles, resultWriter 
 			reader:   reader,
 		}
 	}
-
+	waitForFileCopying.Wait()
 	return
 }
 
@@ -83,7 +84,7 @@ func apiCopy(file foundFile) (reader io.Reader, err error) {
 }
 
 func rawCopy(handler VolumeHandler, file foundFile) (reader io.Reader) {
-	reader = DataRunsReader{
+	reader = &DataRunsReader{
 		VolumeHandler:          handler,
 		DataRuns:               file.mftRecord.DataAttribute.NonResidentDataAttribute.DataRuns,
 		fileName:               file.fullPath,
