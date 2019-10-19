@@ -59,22 +59,35 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 	defer zipWriter.Close()
 
 	var openChannel bool
-	writtenCounter := 0
+
 	for {
+		writtenCounter := 0
 		reader := fileReader{}
 		reader, openChannel = <-*fileReaders
 		if openChannel == false {
 			break
 		}
-		log.Debugf("Writing bytes via raw file handle for %s", reader.fullPath)
-		writer, _ := zipWriter.Create(reader.fullPath)
-		for err != io.EOF {
+		log.Debugf("Reading %s", reader.fullPath)
+		writer, err := zipWriter.Create(reader.fullPath)
+		if err != nil {
+			fmt.Println(err)
+		}
+		var readErr error
+		for readErr == nil {
 			buffer := make([]byte, 4096)
-			_, err = reader.reader.Read(buffer)
-			bytesWritten, _ := writer.Write(buffer)
+			_, readErr = reader.reader.Read(buffer)
+			if readErr != nil {
+				continue
+			}
+			bytesWritten, writeErr := writer.Write(buffer)
+			if writeErr != nil {
+				fmt.Println(writeErr)
+			}
 			writtenCounter += bytesWritten
 		}
-		log.Debugf("Written a total of %v bytes for the file %v", writtenCounter, reader.fullPath)
+		if readErr == io.EOF {
+			log.Debugf("Written a total of %d bytes for the file %s", writtenCounter, reader.fullPath)
+		}
 	}
 	waitForFileCopying.Done()
 	err = nil

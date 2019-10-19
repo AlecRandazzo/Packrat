@@ -52,31 +52,91 @@ func main() {
 	var exportList collector.ExportList
 	if strings.Contains(opts.DataTypesToCollect, "a") {
 		exportList = collector.ExportList{
-			{FullPath: "C:\\\\$MFT", Type: "equal"},
-			{FullPath: "C:\\Windows\\System32\\config\\SYSTEM", Type: "equal"},
-			{FullPath: "C:\\Windows\\System32\\config\\SOFTWARE", Type: "equal"},
-			{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"},
-			{FullPath: "C:\\\\users\\\\([^\\\\]+)\\\\ntuser.dat$", Type: "regex"},
-			{FullPath: "C:\\\\Users\\\\([^\\\\]+)\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\usrclass.dat$", Type: "regex"},
+			{
+				FilePath:           `C:`,
+				FilePathSearchType: "equal",
+				Filename:           `$MFT`,
+				FilenameSearchType: "equal",
+			},
+			{
+				FilePath:           `C:\Windows\System32\config`,
+				FilePathSearchType: "equal",
+				Filename:           `SYSTEM`,
+				FilenameSearchType: "equal",
+			},
+			{
+				FilePath:           `C:\Windows\System32\config`,
+				FilePathSearchType: "equal",
+				Filename:           `SOFTWARE`,
+				FilenameSearchType: "equal",
+			},
+			{
+				FilePath:           `C:\Windows\System32\winevt\Logs`,
+				FilePathSearchType: "equal",
+				Filename:           `.*\\.evtx$`,
+				FilenameSearchType: "regex",
+			},
+			{
+				FilePath:           `C:\\users\\([^\\]+)`,
+				FilePathSearchType: "regex",
+				Filename:           `ntuser.dat`,
+				FilenameSearchType: "equal",
+			},
+			{
+				FilePath:           `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows`,
+				FilePathSearchType: "regex",
+				Filename:           `usrclass.dat`,
+				FilenameSearchType: "equal",
+			},
 		}
 	} else {
 		if strings.Contains(opts.DataTypesToCollect, "m") {
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\$MFT", Type: "equal"})
+			exportList = append(exportList, collector.FileToExport{
+				FilePath:           `C:`,
+				FilePathSearchType: "equal",
+				Filename:           `$MFT`,
+				FilenameSearchType: "equal",
+			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "r") {
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\Windows\\System32\\config\\SYSTEM", Type: "equal"})
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\Windows\\System32\\config\\SOFTWARE", Type: "equal"})
+			exportList = append(exportList, collector.FileToExport{
+				FilePath:           `C:\Windows\System32\config`,
+				FilePathSearchType: "equal",
+				Filename:           `SYSTEM`,
+				FilenameSearchType: "equal",
+			})
+			exportList = append(exportList, collector.FileToExport{
+				FilePath:           `C:\Windows\System32\config`,
+				FilePathSearchType: "equal",
+				Filename:           `SOFTWARE`,
+				FilenameSearchType: "equal",
+			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "u") {
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\users\\\\([^\\\\]+)\\\\ntuser.dat$", Type: "regex"})
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\Users\\\\([^\\\\]+)\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\usrclass.dat$", Type: "regex"})
+			exportList = append(exportList, collector.FileToExport{
+				FilePath:           `C:\\users\\([^\\]+)`,
+				FilePathSearchType: "regex",
+				Filename:           `ntuser.dat`,
+				FilenameSearchType: "equal",
+			})
+			exportList = append(exportList, collector.FileToExport{
+				FilePath:           `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows`,
+				FilePathSearchType: "regex",
+				Filename:           `usrclass.dat`,
+				FilenameSearchType: "equal",
+			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "e") {
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"})
+			exportList = append(exportList, collector.FileToExport{
+				FilePath:           `C:\Windows\System32\winevt\Logs`,
+				FilePathSearchType: "equal",
+				Filename:           `.*\\.evtx$`,
+				FilenameSearchType: "regex",
+			})
 		}
 	}
 
-	resultWriter := collector.ZipResultWriter{ZipFileName: "out.zip"}
+	resultWriter := collector.ZipResultWriter{ZipFileName: opts.ZipName}
 
 	err = collector.Collect("C", exportList, resultWriter)
 	if err != nil {

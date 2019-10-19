@@ -17,6 +17,13 @@ type DataRunsReader struct {
 }
 
 func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfBytesRead int, err error) {
+	// Sanity checking
+	if dataRunReader.DataRuns == nil {
+		err = io.ErrUnexpectedEOF
+		log.Warnf("failed to read %s, received: %v", dataRunReader.fileName, err)
+		return
+	}
+
 	// Check if this reader has been initialized, if not, do so.
 	if dataRunReader.initialized != true {
 		dataRunReader.dataRunTracker = 0

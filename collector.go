@@ -67,6 +67,7 @@ func copyFiles(volumeHandler VolumeHandler, foundFiles foundFiles, resultWriter 
 		// Try to copy the file via API first. If it fails, try to copy the file via raw.
 		reader, err = apiCopy(file)
 		if err != nil {
+			log.Debugf("failed to copy file %s via API, received error: %v", file.fullPath, err)
 			reader = rawCopy(volumeHandler, file)
 		}
 		fileReaders <- fileReader{
@@ -110,7 +111,6 @@ func findFiles(volumeHandler VolumeHandler, mftRecord0 mft.MasterFileTableRecord
 	for _, dataRun := range mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns {
 		// Seek to the start of the datarun
 		_, _ = syscall.Seek(volumeHandler.Handle, dataRun.AbsoluteOffset, 0)
-
 		// Keep track of how large the data run is. We will be counting down this number so we don't overshoot.
 		bytesLeft := dataRun.Length
 
@@ -160,7 +160,6 @@ func findFiles(volumeHandler VolumeHandler, mftRecord0 mft.MasterFileTableRecord
 					break
 				}
 			}
-
 			// Reduce our byte tracker by the number of bytes read
 			bytesLeft -= volumeHandler.Vbr.MftRecordSize
 		}
@@ -171,8 +170,10 @@ func findFiles(volumeHandler VolumeHandler, mftRecord0 mft.MasterFileTableRecord
 
 // File that you want to export.
 type FileToExport struct {
-	FullPath string
-	Type     string
+	FilePath           string
+	FilePathSearchType string
+	Filename           string
+	FilenameSearchType string
 }
 
 // Slice of files that you want to export.
@@ -184,15 +185,15 @@ func buildFileExportLists(exportList ExportList) (fileEqualList fileEqualSearchL
 	// Normalize everything
 	re := regexp.MustCompile("^.:")
 	for key, value := range exportList {
-		exportList[key].FullPath = strings.ToLower(re.ReplaceAllString(value.FullPath, ":"))
+		exportList[key].FilePath = strings.ToLower(re.ReplaceAllString(value.FilePath, ":"))
 	}
 
 	for _, value := range exportList {
-		switch value.Type {
+		switch value.FilePathSearchType {
 		case "equal":
-			fileEqualList = append(fileEqualList, value.FullPath)
+			fileEqualList = append(fileEqualList, value.FilePath)
 		case "regex":
-			re := regexp.MustCompile(value.FullPath)
+			re := regexp.MustCompile(value.FilePath)
 			fileRegexList = append(fileRegexList, re)
 		}
 	}
