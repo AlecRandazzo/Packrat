@@ -11,18 +11,17 @@ package windowscollector
 
 import (
 	"fmt"
-	//mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
 	vbr "github.com/AlecRandazzo/GoFor-VBR-Parser"
 	log "github.com/sirupsen/logrus"
 	syscall "golang.org/x/sys/windows"
+	"io"
 )
 
 type VolumeHandler struct {
 	Handle       syscall.Handle
 	VolumeLetter string
 	Vbr          vbr.VolumeBootRecord
-	//MappedDirectories map[uint64]string
-	//MftRecord0        mft.MasterFileTableRecord
+	mftReader    io.Reader
 }
 
 func getHandle(volumeLetter string) (handle syscall.Handle, err error) {

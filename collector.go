@@ -3,44 +3,35 @@ package windowscollector
 import (
 	"fmt"
 	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
-	log "github.com/sirupsen/logrus"
 	syscall "golang.org/x/sys/windows"
 	"io"
-	"os"
-	"regexp"
 	"strings"
 	"sync"
 )
 
-func Collect(volumeLetter string, exportList ExportList, resultWriter ResultWriter) (err error) {
+func Collect(volumeLetter string, exportList ListOfFilesToExport, resultWriter ResultWriter) (err error) {
+	searchTerms, err := setupSearchTerms(exportList)
+	if err != nil {
+		err = fmt.Errorf("setupSearchTerms() returned the following error: %w", err)
+		return
+	}
+
 	volumeHandler, err := GetVolumeHandler(volumeLetter)
 	if err != nil {
-		err = fmt.Errorf("failed to get a handle to the volume %v: %v", volumeLetter, err)
+		err = fmt.Errorf("GetVolumeHandler() failed to get a handle to the volume %s: %w", volumeLetter, err)
 		return
 	}
 
-	mftRecord0, err := parseMFTRecord0(volumeHandler)
+	err = getFiles(volumeHandler, resultWriter, searchTerms)
 	if err != nil {
-		err = fmt.Errorf("failed to parse mft record 0 from the volume %v: %v", volumeLetter, err)
+		err = fmt.Errorf("getFiles() failed to get files: %w", err)
 		return
 	}
-
-	directoryTree, err := buildDirectoryTree(volumeHandler, mftRecord0)
-	if err != nil {
-		err = fmt.Errorf("failed to build a directory tree for volume %v: %v", volumeLetter, err)
-		return
-	}
-
-	fileEqualSearchList, fileRegexSearchList := buildFileExportLists(exportList)
-
-	foundFiles := findFiles(volumeHandler, mftRecord0, directoryTree, fileEqualSearchList, fileRegexSearchList)
-
-	err = copyFiles(volumeHandler, foundFiles, resultWriter)
 
 	return
 }
 
-func copyFiles(volumeHandler VolumeHandler, foundFiles foundFiles, resultWriter ResultWriter) (err error) {
+func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSearchKeywords listOfSearchTerms) (err error) {
 	// Init a few things
 	fileReaders := make(chan fileReader, 100)
 	waitForInitialization := sync.WaitGroup{}
@@ -57,146 +48,145 @@ func copyFiles(volumeHandler VolumeHandler, foundFiles foundFiles, resultWriter 
 		return
 	}
 
-	for _, file := range foundFiles {
-		var reader io.Reader
+	// parse the mft's mft record to get its dataruns
+	mftRecord0, err := parseMFTRecord0(volumeHandler)
+	if err != nil {
+		err = fmt.Errorf("parseMFTRecord0() failed to parse mft record 0 from the volume %s: %w", volumeHandler.VolumeLetter, err)
+		return
+	}
 
-		// Defang some special characters int he full path string
-		fullPath := strings.ReplaceAll(file.fullPath, "\\", "_")
-		fullPath = strings.ReplaceAll(fullPath, ":", "_")
+	// Go back to the beginning of the mft record
+	_, _ = syscall.Seek(volumeHandler.Handle, volumeHandler.Vbr.MftByteOffset, 0)
 
-		// Try to copy the file via API first. If it fails, try to copy the file via raw.
-		reader, err = apiCopy(file)
+	// Open a raw reader on the MFT
+	foundFile := foundFile{
+		dataAttribute: mftRecord0.DataAttribute,
+		fullPath:      "$mft",
+	}
+	mftReader := rawFileReader(volumeHandler, foundFile)
+
+	// Do we need to stream a copy of the mft while we read it?
+	areWeCopyingTheMFT := false
+	for index, value := range listOfSearchKeywords {
+		if value.fileNameString == "$mft" {
+			areWeCopyingTheMFT = true
+
+			// delete this from our search list
+			listOfSearchKeywords[index] = listOfSearchKeywords[len(listOfSearchKeywords)-1]
+			listOfSearchKeywords = listOfSearchKeywords[:len(listOfSearchKeywords)-1]
+
+			break
+		}
+	}
+
+	if areWeCopyingTheMFT == true {
+		pipeReader, pipeWriter := io.Pipe()
+		teeReader := io.TeeReader(mftReader, pipeWriter)
+		fileReader := fileReader{
+			fullPath: fmt.Sprintf("%s__$mft", volumeHandler.VolumeLetter),
+			reader:   pipeReader,
+		}
+		fileReaders <- fileReader
+		volumeHandler.mftReader = teeReader
+		directoryTree, possibleMatches, err := findPossibleMatches(volumeHandler, listOfSearchKeywords)
 		if err != nil {
-			log.Debugf("failed to copy file %s via API, received error: %v", file.fullPath, err)
-			reader = rawCopy(volumeHandler, file)
+			err = fmt.Errorf("findPossibleMatches() failed: %w", err)
+			return
 		}
-		fileReaders <- fileReader{
-			fullPath: fullPath,
-			reader:   reader,
+		err = pipeWriter.Close()
+		if err != nil {
+			err = fmt.Errorf("failed to close writer pipe: %w", err)
+			return
+		}
+	} else {
+		volumeHandler.mftReader = mftReader
+		directoryTree, possibleMatches, err := findPossibleMatches(volumeHandler, listOfSearchKeywords)
+		if err != nil {
+			err = fmt.Errorf("findPossibleMatches() failed: %w", err)
+			return
 		}
 	}
-	waitForFileCopying.Wait()
+
 	return
 }
 
-func apiCopy(file foundFile) (reader io.Reader, err error) {
-	reader, err = os.Open(file.fullPath)
+type possibleMatch struct {
+	fileNameAttribute mft.FileNameAttribute
+	dataAttribute     mft.DataAttribute
+}
+
+type possibleMatches []possibleMatch
+
+func findPossibleMatches(volumeHandler VolumeHandler, listOfSearchKeywords listOfSearchTerms) (listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree, err error) {
+	// Init memory
+	unresolvedDirectorTree := make(mft.UnresolvedDirectoryTree)
+	listOfPossibleMatches = make(possibleMatches, 0)
+
+	for err != io.EOF {
+		buffer := mft.RawMasterFileTableRecord(make([]byte, volumeHandler.Vbr.MftRecordSize))
+		_, err = volumeHandler.mftReader.Read(buffer)
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+				break
+			} else {
+				err = fmt.Errorf("findPossibleMatches() failed to read the mft: %w", err)
+				return
+			}
+		}
+
+		result, _ := buffer.IsThisAnMftRecord()
+		if result == false {
+			continue
+		}
+
+		result, err = buffer.IsThisADirectory()
+		if result == true {
+			unresolvedDirectory, _ := mft.ConvertRawMFTRecordToDirectory(buffer)
+			unresolvedDirectorTree[unresolvedDirectory.RecordNumber] = unresolvedDirectory
+		} else {
+			// Parse what we need out of the entry for us to copy the file
+			rawRecordHeader, _ := buffer.GetRawRecordHeader()
+			recordHeader, _ := rawRecordHeader.Parse()
+			rawAttributes, _ := buffer.GetRawAttributes(recordHeader)
+			fileNameAttributes, _, dataAttribute, _ := rawAttributes.Parse(volumeHandler.Vbr.BytesPerCluster)
+			for _, fileNameAttribute := range fileNameAttributes {
+				if strings.Contains(fileNameAttribute.FileNamespace, "WIN32") == true || strings.Contains(fileNameAttribute.FileNamespace, "POSIX") {
+					for _, value := range listOfSearchKeywords {
+						if value.fileNameRegex != nil {
+							if value.fileNameRegex.MatchString(strings.ToLower(fileNameAttribute.FileName)) == true {
+								possibleMatch := possibleMatch{
+									fileNameAttribute: fileNameAttribute,
+									dataAttribute:     dataAttribute,
+								}
+								listOfPossibleMatches = append(listOfPossibleMatches, possibleMatch)
+								break
+							}
+						} else {
+							if value.fileNameString == strings.ToLower(fileNameAttribute.FileName) {
+
+								break
+							}
+						}
+					}
+				}
+				break
+			}
+		}
+	}
+
+	directoryTree, _ = unresolvedDirectorTree.Resolve(volumeHandler.VolumeLetter)
 	return
 }
 
-func rawCopy(handler VolumeHandler, file foundFile) (reader io.Reader) {
-	reader = &DataRunsReader{
-		VolumeHandler:          handler,
-		DataRuns:               file.mftRecord.DataAttribute.NonResidentDataAttribute.DataRuns,
-		fileName:               file.fullPath,
-		dataRunTracker:         0,
-		bytesLeftToReadTracker: 0,
-		initialized:            false,
-	}
+func confirmFoundFiles(listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) (foundFiles foundFiles, err error) {
+
 	return
 }
 
 type foundFile struct {
-	mftRecord mft.MasterFileTableRecord
-	fullPath  string
+	dataAttribute mft.DataAttribute
+	fullPath      string
 }
 
 type foundFiles []foundFile
-
-func findFiles(volumeHandler VolumeHandler, mftRecord0 mft.MasterFileTableRecord, directoryTree mft.DirectoryTree, fileEqualSearchList fileEqualSearchList, fileRegexSearchList fileRegexSearchList) (foundFiles foundFiles) {
-	// Init memory
-	foundFiles = make([]foundFile, 0)
-
-	// Search mft record 0's data runs for the files we want to collect
-	for _, dataRun := range mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns {
-		// Seek to the start of the datarun
-		_, _ = syscall.Seek(volumeHandler.Handle, dataRun.AbsoluteOffset, 0)
-		// Keep track of how large the data run is. We will be counting down this number so we don't overshoot.
-		bytesLeft := dataRun.Length
-
-		// This for loop will run while there is datarun left to read.
-		for bytesLeft > 0 {
-			// Load bytes into a buffer
-			buffer := make([]byte, volumeHandler.Vbr.MftRecordSize)
-			_, _ = syscall.Read(volumeHandler.Handle, buffer)
-
-			// Parse the buffered bytes
-			mftRecord, _ := mft.RawMasterFileTableRecord(buffer).Parse(volumeHandler.Vbr.BytesPerCluster)
-			if len(mftRecord.FileNameAttributes) == 0 {
-				bytesLeft -= volumeHandler.Vbr.MftRecordSize
-				continue
-			}
-
-			for _, attribute := range mftRecord.FileNameAttributes {
-				// Find the filename attribute that will have the non DOS name for the file
-				if strings.Contains(attribute.FileNamespace, "WIN32") == true || strings.Contains(attribute.FileNamespace, "POSIX") == true {
-					recordFullPath := strings.ToLower(directoryTree[attribute.ParentDirRecordNumber] + "\\" + attribute.FileName)
-
-					// Cross check our string search list. If found, track the file for collection later
-					for _, file := range fileEqualSearchList {
-						if file == recordFullPath {
-							log.Debugf("Found the MFT record for the file '%s', tracking relevant metadata for copying later.", recordFullPath)
-							foundFile := foundFile{
-								mftRecord: mftRecord,
-								fullPath:  recordFullPath,
-							}
-							foundFiles = append(foundFiles, foundFile)
-							break
-						}
-					}
-
-					// Cross check our regex search list. If found, track the file for collection later
-					for _, file := range fileRegexSearchList {
-						if file.Match([]byte(recordFullPath)) == true {
-							log.Debugf("Found the MFT record for the file '%s', tracking relevant metadata for copying later.", recordFullPath)
-							foundFile := foundFile{
-								mftRecord: mftRecord,
-								fullPath:  recordFullPath,
-							}
-							foundFiles = append(foundFiles, foundFile)
-							break
-						}
-					}
-					break
-				}
-			}
-			// Reduce our byte tracker by the number of bytes read
-			bytesLeft -= volumeHandler.Vbr.MftRecordSize
-		}
-	}
-
-	return
-}
-
-// File that you want to export.
-type FileToExport struct {
-	FilePath           string
-	FilePathSearchType string
-	Filename           string
-	FilenameSearchType string
-}
-
-// Slice of files that you want to export.
-type ExportList []FileToExport
-type fileEqualSearchList []string
-type fileRegexSearchList []*regexp.Regexp
-
-func buildFileExportLists(exportList ExportList) (fileEqualList fileEqualSearchList, fileRegexList fileRegexSearchList) {
-	// Normalize everything
-	re := regexp.MustCompile("^.:")
-	for key, value := range exportList {
-		exportList[key].FilePath = strings.ToLower(re.ReplaceAllString(value.FilePath, ":"))
-	}
-
-	for _, value := range exportList {
-		switch value.FilePathSearchType {
-		case "equal":
-			fileEqualList = append(fileEqualList, value.FilePath)
-		case "regex":
-			re := regexp.MustCompile(value.FilePath)
-			fileRegexList = append(fileRegexList, re)
-		}
-	}
-
-	return
-}

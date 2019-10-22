@@ -51,25 +51,3 @@ func parseMFTRecord0(volume VolumeHandler) (mftRecord0 mft.MasterFileTableRecord
 
 	return
 }
-
-func buildDirectoryTree(volumeHandler VolumeHandler, mftRecord0 mft.MasterFileTableRecord) (directoryTree mft.DirectoryTree, err error) {
-	log.Debugf("Building directory tree for volume %v", volumeHandler.VolumeLetter)
-	dataRunsReader := DataRunsReader{
-		VolumeHandler:          volumeHandler,
-		DataRuns:               mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns,
-		fileName:               "$MFT",
-		dataRunTracker:         0,
-		bytesLeftToReadTracker: 0,
-		initialized:            false,
-	}
-	unresolvedDirectoryTree, err := mft.BuildUnresolvedDirectoryTree(&dataRunsReader)
-	if err != nil {
-		err = errors.New("failed to build an unresolved directory tree for mft data starting at datarun")
-		return
-	}
-	log.Debugf("Found %d directories that need resolution.", len(unresolvedDirectoryTree))
-	directoryTree, _ = unresolvedDirectoryTree.Resolve(volumeHandler.VolumeLetter)
-	log.Debugf("Resolved %d directories.", len(directoryTree))
-
-	return
-}

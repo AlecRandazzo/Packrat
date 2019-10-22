@@ -19,11 +19,12 @@ import (
 	"sync"
 )
 
-type CollectorClient struct {
-	waitGroup               sync.WaitGroup
-	VolumeHandler           VolumeHandler
-	FileEqualListForFinding fileEqualSearchList
-	FileRegexListForFinding fileRegexSearchList
+type ResultWriter interface {
+	ResultWriter(*chan fileReader, *sync.WaitGroup, *sync.WaitGroup) (err error)
+}
+
+type ZipResultWriter struct {
+	ZipFileName string
 }
 
 type fileReader struct {
@@ -31,15 +32,6 @@ type fileReader struct {
 	reader   io.Reader
 }
 
-type ResultWriter interface {
-	ResultWriter(fileReaders *chan fileReader, waitGroup *sync.WaitGroup, waitForFileCopying *sync.WaitGroup) (err error)
-}
-
-type ZipResultWriter struct {
-	ZipFileName string
-}
-
-// ResultWriter collects target files and writes them to a zip file.
 func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader, waitForInitialization *sync.WaitGroup, waitForFileCopying *sync.WaitGroup) (err error) {
 	// Sanity checks
 	if zipResultWriter.ZipFileName == "" {
@@ -62,20 +54,20 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 
 	for {
 		writtenCounter := 0
-		reader := fileReader{}
-		reader, openChannel = <-*fileReaders
+		fileReader := fileReader{}
+		fileReader, openChannel = <-*fileReaders
 		if openChannel == false {
 			break
 		}
-		log.Debugf("Reading %s", reader.fullPath)
-		writer, err := zipWriter.Create(reader.fullPath)
+		log.Debugf("Reading %s", fileReader.fullPath)
+		writer, err := zipWriter.Create(fileReader.fullPath)
 		if err != nil {
 			fmt.Println(err)
 		}
 		var readErr error
 		for readErr == nil {
 			buffer := make([]byte, 4096)
-			_, readErr = reader.reader.Read(buffer)
+			_, readErr = fileReader.reader.Read(buffer)
 			if readErr != nil {
 				continue
 			}
@@ -86,7 +78,7 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 			writtenCounter += bytesWritten
 		}
 		if readErr == io.EOF {
-			log.Debugf("Written a total of %d bytes for the file %s", writtenCounter, reader.fullPath)
+			log.Debugf("Written a total of %d bytes for the file %s", writtenCounter, fileReader.fullPath)
 		}
 	}
 	waitForFileCopying.Done()

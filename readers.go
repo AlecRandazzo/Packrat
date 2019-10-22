@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	syscall "golang.org/x/sys/windows"
 	"io"
+	"os"
 )
 
 type DataRunsReader struct {
@@ -89,5 +90,22 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 		_, _ = syscall.Seek(dataRunReader.VolumeHandler.Handle, dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
 	}
 
+	return
+}
+
+func apiFileReader(file foundFile) (reader io.Reader, err error) {
+	reader, err = os.Open(file.fullPath)
+	return
+}
+
+func rawFileReader(handler VolumeHandler, file foundFile) (reader io.Reader) {
+	reader = &DataRunsReader{
+		VolumeHandler:          handler,
+		DataRuns:               file.mftRecord.DataAttribute.NonResidentDataAttribute.DataRuns,
+		fileName:               file.fullPath,
+		dataRunTracker:         0,
+		bytesLeftToReadTracker: 0,
+		initialized:            false,
+	}
 	return
 }

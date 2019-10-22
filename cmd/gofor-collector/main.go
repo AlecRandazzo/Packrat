@@ -49,89 +49,89 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	var exportList collector.ExportList
+	var exportList collector.ListOfFilesToExport
 	if strings.Contains(opts.DataTypesToCollect, "a") {
-		exportList = collector.ExportList{
+		exportList = collector.ListOfFilesToExport{
 			{
-				FilePath:           `C:`,
+				FilePath:           `C:\`,
 				FilePathSearchType: "equal",
-				Filename:           `$MFT`,
-				FilenameSearchType: "equal",
+				FileName:           `$MFT`,
+				FileNameSearchType: "equal",
 			},
 			{
-				FilePath:           `C:\Windows\System32\config`,
+				FilePath:           `C:\Windows\System32\config\`,
 				FilePathSearchType: "equal",
-				Filename:           `SYSTEM`,
-				FilenameSearchType: "equal",
+				FileName:           `SYSTEM`,
+				FileNameSearchType: "equal",
 			},
 			{
-				FilePath:           `C:\Windows\System32\config`,
+				FilePath:           `C:\Windows\System32\config\`,
 				FilePathSearchType: "equal",
-				Filename:           `SOFTWARE`,
-				FilenameSearchType: "equal",
+				FileName:           `SOFTWARE`,
+				FileNameSearchType: "equal",
 			},
 			{
-				FilePath:           `C:\Windows\System32\winevt\Logs`,
+				FilePath:           `C:\Windows\System32\winevt\Logs\`,
 				FilePathSearchType: "equal",
-				Filename:           `.*\\.evtx$`,
-				FilenameSearchType: "regex",
+				FileName:           `.*\\.evtx$`,
+				FileNameSearchType: "regex",
 			},
 			{
-				FilePath:           `C:\\users\\([^\\]+)`,
+				FilePath:           `C:\\users\\([^\\]+)\\`,
 				FilePathSearchType: "regex",
-				Filename:           `ntuser.dat`,
-				FilenameSearchType: "equal",
+				FileName:           `ntuser.dat`,
+				FileNameSearchType: "equal",
 			},
 			{
-				FilePath:           `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows`,
+				FilePath:           `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\`,
 				FilePathSearchType: "regex",
-				Filename:           `usrclass.dat`,
-				FilenameSearchType: "equal",
+				FileName:           `usrclass.dat`,
+				FileNameSearchType: "equal",
 			},
 		}
 	} else {
 		if strings.Contains(opts.DataTypesToCollect, "m") {
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:`,
+				FilePath:           `C:\`,
 				FilePathSearchType: "equal",
-				Filename:           `$MFT`,
-				FilenameSearchType: "equal",
+				FileName:           `$MFT`,
+				FileNameSearchType: "equal",
 			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "r") {
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\Windows\System32\config`,
+				FilePath:           `C:\Windows\System32\config\`,
 				FilePathSearchType: "equal",
-				Filename:           `SYSTEM`,
-				FilenameSearchType: "equal",
+				FileName:           `SYSTEM`,
+				FileNameSearchType: "equal",
 			})
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\Windows\System32\config`,
+				FilePath:           `C:\Windows\System32\config\`,
 				FilePathSearchType: "equal",
-				Filename:           `SOFTWARE`,
-				FilenameSearchType: "equal",
+				FileName:           `SOFTWARE`,
+				FileNameSearchType: "equal",
 			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "u") {
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\\users\\([^\\]+)`,
+				FilePath:           `C:\\users\\([^\\]+)\\`,
 				FilePathSearchType: "regex",
-				Filename:           `ntuser.dat`,
-				FilenameSearchType: "equal",
+				FileName:           `ntuser.dat`,
+				FileNameSearchType: "equal",
 			})
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows`,
+				FilePath:           `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\`,
 				FilePathSearchType: "regex",
-				Filename:           `usrclass.dat`,
-				FilenameSearchType: "equal",
+				FileName:           `usrclass.dat`,
+				FileNameSearchType: "equal",
 			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "e") {
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\Windows\System32\winevt\Logs`,
+				FilePath:           `C:\Windows\System32\winevt\Logs\`,
 				FilePathSearchType: "equal",
-				Filename:           `.*\\.evtx$`,
-				FilenameSearchType: "regex",
+				FileName:           `.*\\.evtx$`,
+				FileNameSearchType: "regex",
 			})
 		}
 	}
