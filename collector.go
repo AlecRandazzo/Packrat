@@ -67,6 +67,9 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 
 	// Do we need to stream a copy of the mft while we read it?
 	areWeCopyingTheMFT := false
+	directoryTree := mft.DirectoryTree{}
+	possibleMatches := possibleMatches{}
+
 	for index, value := range listOfSearchKeywords {
 		if value.fileNameString == "$mft" {
 			areWeCopyingTheMFT = true
@@ -88,7 +91,7 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 		}
 		fileReaders <- fileReader
 		volumeHandler.mftReader = teeReader
-		directoryTree, possibleMatches, err := findPossibleMatches(volumeHandler, listOfSearchKeywords)
+		possibleMatches, directoryTree, err = findPossibleMatches(volumeHandler, listOfSearchKeywords)
 		if err != nil {
 			err = fmt.Errorf("findPossibleMatches() failed: %w", err)
 			return
@@ -100,13 +103,70 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 		}
 	} else {
 		volumeHandler.mftReader = mftReader
-		directoryTree, possibleMatches, err := findPossibleMatches(volumeHandler, listOfSearchKeywords)
+		possibleMatches, directoryTree, err = findPossibleMatches(volumeHandler, listOfSearchKeywords)
 		if err != nil {
 			err = fmt.Errorf("findPossibleMatches() failed: %w", err)
 			return
 		}
 	}
 
+	foundFiles, err := confirmFoundFiles(listOfSearchKeywords, possibleMatches, directoryTree)
+	if err != nil {
+		err = fmt.Errorf("confirmFoundFiles() failed with error: %w", err)
+		return
+	}
+
+	for _, file := range foundFiles {
+		// try to get an io.reader via api first
+		reader, err := apiFileReader(file)
+		if err != nil {
+			// failed to get an API handle, trying to get an io.reader via raw method
+			reader = rawFileReader(volumeHandler, file)
+		}
+		fileReader := fileReader{
+			fullPath: file.fullPath,
+			reader:   reader,
+		}
+
+		fileReaders <- fileReader
+	}
+	err = nil
+	waitForFileCopying.Wait()
+	return
+}
+
+func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) (foundFilesList foundFiles, err error) {
+	foundFilesList = make(foundFiles, 0)
+	for _, possibleMatch := range listOfPossibleMatches {
+		// First make sure that the parent directory is in the directory tree
+		if _, ok := directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber]; ok {
+			// check against all the list of possible full paths
+			possibleMatchFullPath := fmt.Sprintf("%s\\%s", directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber], strings.ToLower(possibleMatch.fileNameAttribute.FileName))
+			for _, searchTerms := range listOfSearchKeywords {
+				if searchTerms.fullPathRegex != nil {
+					searchTerms.fullPathRegex.MatchString(possibleMatchFullPath)
+					foundFile := foundFile{
+						dataAttribute: possibleMatch.dataAttribute,
+						fullPath:      possibleMatchFullPath,
+					}
+					foundFilesList = append(foundFilesList, foundFile)
+					break
+				} else {
+					if searchTerms.fullPathString == possibleMatchFullPath {
+						foundFile := foundFile{
+							dataAttribute: possibleMatch.dataAttribute,
+							fullPath:      possibleMatchFullPath,
+						}
+						foundFilesList = append(foundFilesList, foundFile)
+						break
+					}
+				}
+			}
+		} else {
+			// continue if parent directory is not in the directory tree map
+			continue
+		}
+	}
 	return
 }
 
@@ -164,7 +224,11 @@ func findPossibleMatches(volumeHandler VolumeHandler, listOfSearchKeywords listO
 							}
 						} else {
 							if value.fileNameString == strings.ToLower(fileNameAttribute.FileName) {
-
+								possibleMatch := possibleMatch{
+									fileNameAttribute: fileNameAttribute,
+									dataAttribute:     dataAttribute,
+								}
+								listOfPossibleMatches = append(listOfPossibleMatches, possibleMatch)
 								break
 							}
 						}
@@ -176,11 +240,6 @@ func findPossibleMatches(volumeHandler VolumeHandler, listOfSearchKeywords listO
 	}
 
 	directoryTree, _ = unresolvedDirectorTree.Resolve(volumeHandler.VolumeLetter)
-	return
-}
-
-func confirmFoundFiles(listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) (foundFiles foundFiles, err error) {
-
 	return
 }
 

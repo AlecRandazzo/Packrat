@@ -44,11 +44,12 @@ func setupSearchTerms(exportList ListOfFilesToExport) (listOfSearchKeywords list
 		re := regexp.MustCompile("^.:")
 		value.FilePath = strings.ToLower(re.ReplaceAllString(value.FilePath, ":"))
 		value.FileName = strings.ToLower(value.FileName)
-		if value.IsFilePathRegex == false && strings.HasSuffix(value.FilePath, "\\") == false {
-			err = fmt.Errorf("file path '%s' is missing a trailing '\\'", value.FilePath)
+
+		if value.IsFilePathRegex == false && strings.HasSuffix(value.FilePath, "\\") == true {
+			err = fmt.Errorf("file path '%s' has a trailing '\\'", value.FilePath)
 			return
-		} else if value.IsFilePathRegex == true && strings.HasSuffix(value.FilePath, "\\\\") == false {
-			err = fmt.Errorf("file path '%s' is missing a trailing '\\\\'", value.FilePath)
+		} else if value.IsFilePathRegex == true && strings.HasSuffix(value.FilePath, "\\\\") == true {
+			err = fmt.Errorf("file path '%s' has missing a trailing '\\\\'", value.FilePath)
 			return
 		}
 

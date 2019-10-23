@@ -101,7 +101,7 @@ func apiFileReader(file foundFile) (reader io.Reader, err error) {
 func rawFileReader(handler VolumeHandler, file foundFile) (reader io.Reader) {
 	reader = &DataRunsReader{
 		VolumeHandler:          handler,
-		DataRuns:               file.mftRecord.DataAttribute.NonResidentDataAttribute.DataRuns,
+		DataRuns:               file.dataAttribute.NonResidentDataAttribute.DataRuns,
 		fileName:               file.fullPath,
 		dataRunTracker:         0,
 		bytesLeftToReadTracker: 0,
