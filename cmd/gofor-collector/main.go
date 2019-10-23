@@ -71,9 +71,9 @@ func main() {
 				IsFileNameRegex: false,
 			},
 			{
-				FullPath:        `C:\\Windows\\System32\\winevt\\Logs\\.*\\.evtx$`,
+				FullPath:        `C:\\Windows\\System32\\winevt\\Logs\\.*\.evtx$`,
 				IsFullPathRegex: true,
-				FileName:        `.*\\.evtx$`,
+				FileName:        `.*\.evtx$`,
 				IsFileNameRegex: true,
 			},
 			{
