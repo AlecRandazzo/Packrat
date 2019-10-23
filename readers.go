@@ -73,11 +73,12 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 			log.Debugf("Finished reading the file '%s' via raw method.", dataRunReader.fileName)
 			return
 		}
-		log.Debugf("Finished reading via raw method data run number %d for the file '%s'. There are %d data runs left. Moving onto data run number %d.",
+		log.Debugf("Finished reading via raw method data run number %d for the file '%s'. There are %d data runs left. Moving onto data run number %d which has a length of %d bytes.",
 			dataRunReader.dataRunTracker,
 			dataRunReader.fileName,
 			len(dataRunReader.DataRuns)-dataRunReader.dataRunTracker-1,
 			dataRunReader.dataRunTracker+1,
+			dataRunReader.DataRuns[dataRunReader.dataRunTracker+1].Length,
 		)
 
 		// Increment our tracker

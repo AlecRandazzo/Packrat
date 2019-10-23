@@ -16,6 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -60,7 +61,9 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 			break
 		}
 		log.Debugf("Reading %s", fileReader.fullPath)
-		writer, err := zipWriter.Create(fileReader.fullPath)
+		normalizedFilePath := strings.ReplaceAll(fileReader.fullPath, "\\", "_")
+		normalizedFilePath = strings.ReplaceAll(normalizedFilePath, ":", "_")
+		writer, err := zipWriter.Create(normalizedFilePath)
 		if err != nil {
 			fmt.Println(err)
 		}

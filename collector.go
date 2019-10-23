@@ -153,6 +153,8 @@ func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMat
 		if _, ok := directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber]; ok {
 			// check against all the list of possible full paths
 			possibleMatchFullPath := fmt.Sprintf("%s\\%s", directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber], strings.ToLower(possibleMatch.fileNameAttribute.FileName))
+			numberOfSearchTerms := len(listOfSearchKeywords)
+			counter := 0
 			for _, searchTerms := range listOfSearchKeywords {
 				if searchTerms.fullPathRegex != nil {
 					searchTerms.fullPathRegex.MatchString(possibleMatchFullPath)
@@ -173,6 +175,10 @@ func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMat
 						foundFilesList = append(foundFilesList, foundFile)
 						break
 					}
+				}
+				counter++
+				if counter == numberOfSearchTerms {
+					log.Debugf("The file %s did end up being a true positive", possibleMatchFullPath)
 				}
 			}
 		} else {
@@ -250,8 +256,8 @@ func findPossibleMatches(volumeHandler VolumeHandler, listOfSearchKeywords listO
 							}
 						}
 					}
+					break
 				}
-				break
 			}
 		}
 	}
