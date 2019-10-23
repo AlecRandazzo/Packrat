@@ -50,7 +50,7 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 	zipWriter := zip.NewWriter(zipFileHandle)
 	defer zipWriter.Close()
 
-	var openChannel bool
+	openChannel := true
 
 	for openChannel == true {
 		writtenCounter := 0

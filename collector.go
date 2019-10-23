@@ -139,6 +139,7 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 		log.Debugf("Passing a fileReader for %s to our ResultWriter", fileReader.fullPath)
 		fileReaders <- fileReader
 	}
+	close(fileReaders)
 	err = nil
 	waitForFileCopying.Wait()
 	return
