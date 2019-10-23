@@ -52,7 +52,7 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 
 	var openChannel bool
 
-	for {
+	for openChannel == true {
 		writtenCounter := 0
 		fileReader := fileReader{}
 		fileReader, openChannel = <-*fileReaders

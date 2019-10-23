@@ -3,6 +3,7 @@ package windowscollector
 import (
 	"fmt"
 	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
+	log "github.com/sirupsen/logrus"
 	syscall "golang.org/x/sys/windows"
 	"io"
 	"strings"
@@ -10,6 +11,7 @@ import (
 )
 
 func Collect(volumeLetter string, exportList ListOfFilesToExport, resultWriter ResultWriter) (err error) {
+	log.Debugf("Attempting to acquire the following files %+v", exportList)
 	searchTerms, err := setupSearchTerms(exportList)
 	if err != nil {
 		err = fmt.Errorf("setupSearchTerms() returned the following error: %w", err)
@@ -47,6 +49,7 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 		err = fmt.Errorf("failed to setup resultWriter: %v", err)
 		return
 	}
+	log.Debug("Successfully initialized the ResultWriter goroutine.")
 
 	// parse the mft's mft record to get its dataruns
 	mftRecord0, err := parseMFTRecord0(volumeHandler)
@@ -54,9 +57,11 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 		err = fmt.Errorf("parseMFTRecord0() failed to parse mft record 0 from the volume %s: %w", volumeHandler.VolumeLetter, err)
 		return
 	}
+	log.Debugf("Parsed the MFT's MFT record and got the following: %+v", mftRecord0)
 
 	// Go back to the beginning of the mft record
 	_, _ = syscall.Seek(volumeHandler.Handle, volumeHandler.Vbr.MftByteOffset, 0)
+	log.Debugf("Seeked back to the beginning offset to the MFT at offset %d", volumeHandler.Vbr.MftByteOffset)
 
 	// Open a raw reader on the MFT
 	foundFile := foundFile{
@@ -64,6 +69,7 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 		fullPath:      "$mft",
 	}
 	mftReader := rawFileReader(volumeHandler, foundFile)
+	log.Debug("Obtained a raw io.Reader to the MFT's dataruns.")
 
 	// Do we need to stream a copy of the mft while we read it?
 	areWeCopyingTheMFT := false
@@ -83,6 +89,7 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 	}
 
 	if areWeCopyingTheMFT == true {
+		log.Debug("We are configured to grab a copy of the MFT, so we'll set up a io.TeeReader with an io.Pipe so we can copy the mft as we read it. We do this so we only have to read the MFT's data runs once and only once.")
 		pipeReader, pipeWriter := io.Pipe()
 		teeReader := io.TeeReader(mftReader, pipeWriter)
 		fileReader := fileReader{
@@ -118,8 +125,10 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 
 	for _, file := range foundFiles {
 		// try to get an io.reader via api first
+		log.Debugf("Trying to get an io.Reader from the file %s via API.", file.fullPath)
 		reader, err := apiFileReader(file)
 		if err != nil {
+			log.Debugf("Failed to get an io.Reader via API method, trying via raw method against the file's '%s' dataruns: %+v", file.fullPath, file.dataAttribute)
 			// failed to get an API handle, trying to get an io.reader via raw method
 			reader = rawFileReader(volumeHandler, file)
 		}
@@ -127,7 +136,7 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 			fullPath: file.fullPath,
 			reader:   reader,
 		}
-
+		log.Debugf("Passing a fileReader for %s to our ResultWriter", fileReader.fullPath)
 		fileReaders <- fileReader
 	}
 	err = nil
@@ -136,6 +145,7 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 }
 
 func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) (foundFilesList foundFiles, err error) {
+	log.Debug("Determining what possible matches are true matches.")
 	foundFilesList = make(foundFiles, 0)
 	for _, possibleMatch := range listOfPossibleMatches {
 		// First make sure that the parent directory is in the directory tree
@@ -149,6 +159,7 @@ func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMat
 						dataAttribute: possibleMatch.dataAttribute,
 						fullPath:      possibleMatchFullPath,
 					}
+					log.Debugf("Found a true match: %+v", foundFile)
 					foundFilesList = append(foundFilesList, foundFile)
 					break
 				} else {
@@ -157,6 +168,7 @@ func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMat
 							dataAttribute: possibleMatch.dataAttribute,
 							fullPath:      possibleMatchFullPath,
 						}
+						log.Debugf("Found a true match: %+v", foundFile)
 						foundFilesList = append(foundFilesList, foundFile)
 						break
 					}
@@ -178,6 +190,8 @@ type possibleMatch struct {
 type possibleMatches []possibleMatch
 
 func findPossibleMatches(volumeHandler VolumeHandler, listOfSearchKeywords listOfSearchTerms) (listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree, err error) {
+	log.Debugf("Starting to scan the MFT's dataruns to create a tree of directories and to search for the for the following search terms: %+v", listOfSearchKeywords)
+
 	// Init memory
 	unresolvedDirectorTree := make(mft.UnresolvedDirectoryTree)
 	listOfPossibleMatches = make(possibleMatches, 0)
@@ -219,6 +233,7 @@ func findPossibleMatches(volumeHandler VolumeHandler, listOfSearchKeywords listO
 									fileNameAttribute: fileNameAttribute,
 									dataAttribute:     dataAttribute,
 								}
+								log.Debugf("Found a possible file match: %+v", possibleMatch)
 								listOfPossibleMatches = append(listOfPossibleMatches, possibleMatch)
 								break
 							}
@@ -228,6 +243,7 @@ func findPossibleMatches(volumeHandler VolumeHandler, listOfSearchKeywords listO
 									fileNameAttribute: fileNameAttribute,
 									dataAttribute:     dataAttribute,
 								}
+								log.Debugf("Found a possible file match: %+v", possibleMatch)
 								listOfPossibleMatches = append(listOfPossibleMatches, possibleMatch)
 								break
 							}
@@ -238,8 +254,9 @@ func findPossibleMatches(volumeHandler VolumeHandler, listOfSearchKeywords listO
 			}
 		}
 	}
-
+	log.Debugf("Resolving %d directories we found to build their full paths.", len(unresolvedDirectorTree))
 	directoryTree, _ = unresolvedDirectorTree.Resolve(volumeHandler.VolumeLetter)
+	log.Debugf("Successfully resolved %d directories.", len(directoryTree))
 	return
 }
 
