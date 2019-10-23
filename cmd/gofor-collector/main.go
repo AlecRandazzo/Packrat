@@ -53,85 +53,85 @@ func main() {
 	if strings.Contains(opts.DataTypesToCollect, "a") {
 		exportList = collector.ListOfFilesToExport{
 			{
-				FilePath:           `C:\`,
-				FilePathSearchType: "equal",
-				FileName:           `$MFT`,
-				FileNameSearchType: "equal",
+				FullPath:        `C:\$MFT`,
+				IsFullPathRegex: false,
+				FileName:        `$MFT`,
+				IsFileNameRegex: false,
 			},
 			{
-				FilePath:           `C:\Windows\System32\config\`,
-				FilePathSearchType: "equal",
-				FileName:           `SYSTEM`,
-				FileNameSearchType: "equal",
+				FullPath:        `C:\Windows\System32\config\SYSTEM`,
+				IsFullPathRegex: false,
+				FileName:        `SYSTEM`,
+				IsFileNameRegex: false,
 			},
 			{
-				FilePath:           `C:\Windows\System32\config\`,
-				FilePathSearchType: "equal",
-				FileName:           `SOFTWARE`,
-				FileNameSearchType: "equal",
+				FullPath:        `C:\Windows\System32\config\SOFTWARE`,
+				IsFullPathRegex: false,
+				FileName:        `SOFTWARE`,
+				IsFileNameRegex: false,
 			},
 			{
-				FilePath:           `C:\Windows\System32\winevt\Logs\`,
-				FilePathSearchType: "equal",
-				FileName:           `.*\\.evtx$`,
-				FileNameSearchType: "regex",
+				FullPath:        `C:\\Windows\\System32\\winevt\\Logs\\.*\\.evtx$`,
+				IsFullPathRegex: true,
+				FileName:        `.*\\.evtx$`,
+				IsFileNameRegex: true,
 			},
 			{
-				FilePath:           `C:\\users\\([^\\]+)\\`,
-				FilePathSearchType: "regex",
-				FileName:           `ntuser.dat`,
-				FileNameSearchType: "equal",
+				FullPath:        `C:\\users\\([^\\]+)\\ntuser.dat`,
+				IsFullPathRegex: true,
+				FileName:        `ntuser.dat`,
+				IsFileNameRegex: false,
 			},
 			{
-				FilePath:           `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\`,
-				FilePathSearchType: "regex",
-				FileName:           `usrclass.dat`,
-				FileNameSearchType: "equal",
+				FullPath:        `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\usrclass.dat`,
+				IsFullPathRegex: true,
+				FileName:        `usrclass.dat`,
+				IsFileNameRegex: false,
 			},
 		}
 	} else {
 		if strings.Contains(opts.DataTypesToCollect, "m") {
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\`,
-				FilePathSearchType: "equal",
-				FileName:           `$MFT`,
-				FileNameSearchType: "equal",
+				FullPath:        `C:\$MFT`,
+				IsFullPathRegex: false,
+				FileName:        `$MFT`,
+				IsFileNameRegex: false,
 			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "r") {
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\Windows\System32\config\`,
-				FilePathSearchType: "equal",
-				FileName:           `SYSTEM`,
-				FileNameSearchType: "equal",
+				FullPath:        `C:\Windows\System32\config\SYSTEM`,
+				IsFullPathRegex: false,
+				FileName:        `SYSTEM`,
+				IsFileNameRegex: false,
 			})
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\Windows\System32\config\`,
-				FilePathSearchType: "equal",
-				FileName:           `SOFTWARE`,
-				FileNameSearchType: "equal",
+				FullPath:        `C:\Windows\System32\config\SOFTWARE`,
+				IsFullPathRegex: false,
+				FileName:        `SOFTWARE`,
+				IsFileNameRegex: false,
 			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "u") {
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\\users\\([^\\]+)\\`,
-				FilePathSearchType: "regex",
-				FileName:           `ntuser.dat`,
-				FileNameSearchType: "equal",
+				FullPath:        `C:\\users\\([^\\]+)\\ntuser.dat`,
+				IsFullPathRegex: true,
+				FileName:        `ntuser.dat`,
+				IsFileNameRegex: false,
 			})
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\`,
-				FilePathSearchType: "regex",
-				FileName:           `usrclass.dat`,
-				FileNameSearchType: "equal",
+				FullPath:        `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\usrclass.dat`,
+				IsFullPathRegex: true,
+				FileName:        `usrclass.dat`,
+				IsFileNameRegex: false,
 			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "e") {
 			exportList = append(exportList, collector.FileToExport{
-				FilePath:           `C:\Windows\System32\winevt\Logs\`,
-				FilePathSearchType: "equal",
-				FileName:           `.*\\.evtx$`,
-				FileNameSearchType: "regex",
+				FullPath:        `C:\\Windows\\System32\\winevt\\Logs\\.*\\.evtx$`,
+				IsFullPathRegex: true,
+				FileName:        `.*\\.evtx$`,
+				IsFileNameRegex: true,
 			})
 		}
 	}
