@@ -69,14 +69,15 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 		}
 		var readErr error
 		for readErr == nil {
-			buffer := make([]byte, 4096)
+			buffer := make([]byte, 1024)
 			_, readErr = fileReader.reader.Read(buffer)
 			if readErr != nil {
+				log.Debugf("Stopped reading %s due to %v", fileReader.fullPath, err)
 				continue
 			}
 			bytesWritten, writeErr := writer.Write(buffer)
 			if writeErr != nil {
-				fmt.Println(writeErr)
+				log.Warn(writeErr)
 			}
 			writtenCounter += bytesWritten
 		}
