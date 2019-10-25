@@ -62,7 +62,7 @@ func findPossibleMatches(volumeHandler VolumeHandler, listOfSearchKeywords listO
 								if len(possibleMatch.dataAttribute.NonResidentDataAttribute.DataRuns) == 0 {
 									log.Debugf("Found a possible file match for '%s' though it has nil data runs. Here's the hex for verification: %x", possibleMatch.fileNameAttribute.FileName, buffer)
 								} else {
-									log.Debugf("Found a possible file match: %+v", possibleMatch)
+									log.Debugf("Found a possible file match: %+v. Here's the hex if you need to do debugging: %x", possibleMatch, buffer)
 								}
 								listOfPossibleMatches = append(listOfPossibleMatches, possibleMatch)
 								break
