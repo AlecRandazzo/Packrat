@@ -45,18 +45,10 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 	fileReaders := make(chan fileReader, 100)
 	waitForInitialization := sync.WaitGroup{}
 	waitForFileCopying := sync.WaitGroup{}
-
-	waitForInitialization.Add(1)
 	waitForFileCopying.Add(1)
 	go func() {
 		err = resultWriter.ResultWriter(&fileReaders, &waitForInitialization, &waitForFileCopying)
 	}()
-	waitForInitialization.Wait()
-	if err != nil {
-		err = fmt.Errorf("failed to setup resultWriter: %v", err)
-		return
-	}
-	log.Debug("Successfully initialized the ResultWriter goroutine.")
 
 	// parse the mft's mft record to get its dataruns
 	mftRecord0, err := parseMFTRecord0(volumeHandler)

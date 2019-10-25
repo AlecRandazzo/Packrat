@@ -11,11 +11,9 @@ package windowscollector
 
 import (
 	"archive/zip"
-	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io"
-	"os"
 	"strings"
 	"sync"
 )
@@ -25,7 +23,7 @@ type ResultWriter interface {
 }
 
 type ZipResultWriter struct {
-	ZipFileName string
+	ZipWriter zip.Writer
 }
 
 type fileReader struct {
@@ -34,34 +32,10 @@ type fileReader struct {
 }
 
 func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader, waitForInitialization *sync.WaitGroup, waitForFileCopying *sync.WaitGroup) (err error) {
-	// Sanity checks
-	if zipResultWriter.ZipFileName == "" {
-		err = errors.New("ZipResultWriter did not have a ZipFileName set")
-		return
-	}
-
-	var zipFileHandle *os.File
-	if _, err = os.Stat(zipResultWriter.ZipFileName); os.IsNotExist(err) {
-		zipFileHandle, err = os.Create(zipResultWriter.ZipFileName)
-		if err != nil {
-			err = fmt.Errorf("failed to create the zip file %v", zipResultWriter.ZipFileName)
-			return
-		}
-	} else {
-		zipFileHandle, err = os.Open(zipResultWriter.ZipFileName)
-		if err != nil {
-			err = fmt.Errorf("failed to open the zip file %v", zipResultWriter.ZipFileName)
-			return
-		}
-	}
-	defer zipFileHandle.Close()
-
-	waitForInitialization.Done()
-	zipWriter := zip.NewWriter(zipFileHandle)
-	defer zipWriter.Close()
+	defer zipResultWriter.ZipWriter.Close()
+	defer waitForFileCopying.Done()
 
 	openChannel := true
-
 	for openChannel == true {
 		writtenCounter := 0
 		fileReader := fileReader{}
@@ -72,7 +46,8 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 		log.Debugf("Reading %s", fileReader.fullPath)
 		normalizedFilePath := strings.ReplaceAll(fileReader.fullPath, "\\", "_")
 		normalizedFilePath = strings.ReplaceAll(normalizedFilePath, ":", "_")
-		writer, err := zipWriter.Create(normalizedFilePath)
+		var writer io.Writer
+		writer, err = zipResultWriter.ZipWriter.Create(normalizedFilePath)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -86,7 +61,7 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 			}
 			bytesWritten, writeErr := writer.Write(buffer)
 			if writeErr != nil {
-				log.Warn(writeErr)
+				log.Panic(writeErr)
 			}
 			writtenCounter += bytesWritten
 		}
@@ -94,7 +69,6 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 			log.Debugf("Written a total of %d bytes for the file %s", writtenCounter, fileReader.fullPath)
 		}
 	}
-	waitForFileCopying.Done()
 	err = nil
 	return
 }

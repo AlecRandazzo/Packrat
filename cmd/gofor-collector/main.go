@@ -10,6 +10,8 @@
 package main
 
 import (
+	"archive/zip"
+	"fmt"
 	collector "github.com/AlecRandazzo/GoFor-Windows-Collector"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
@@ -136,7 +138,15 @@ func main() {
 		}
 	}
 
-	resultWriter := collector.ZipResultWriter{ZipFileName: opts.ZipName}
+	fileHandle, err := os.Create(opts.ZipName)
+	if err != nil {
+		err = fmt.Errorf("failed to create zip file %s", opts.ZipName)
+	}
+	zipWriter := zip.NewWriter(fileHandle)
+
+	resultWriter := collector.ZipResultWriter{
+		ZipWriter: *zipWriter,
+	}
 
 	err = collector.Collect(exportList, resultWriter)
 	if err != nil {
