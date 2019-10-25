@@ -10,11 +10,16 @@
 package windowscollector
 
 import (
+	"errors"
 	"fmt"
 	vbr "github.com/AlecRandazzo/GoFor-VBR-Parser"
 	log "github.com/sirupsen/logrus"
 	syscall "golang.org/x/sys/windows"
 	"io"
+	"os"
+	"regexp"
+	"strings"
+	"unicode"
 )
 
 type VolumeHandler struct {
@@ -62,5 +67,65 @@ func GetVolumeHandler(volumeLetter string) (volume VolumeHandler, err error) {
 		return
 	}
 	log.Debugf("Successfully got a file handle to volume %v and read its volume boot record.", volumeLetter)
+	return
+}
+
+func isLetter(s string) (result bool, err error) {
+	// Sanity checking
+	if s == "" {
+		err = errors.New("isLetter() received a null string")
+		return
+	} else if len(s) > 1 {
+		err = fmt.Errorf("isLetter() received the string %s which is too many letters, function expected a single letter", s)
+		return
+	}
+
+	for _, r := range s {
+		if unicode.IsLetter(r) {
+			result = true
+			return
+		}
+	}
+
+	result = false
+	return
+}
+
+func identifyVolumesOfInterest(exportList *ListOfFilesToExport) (volumesOfInterest []string, err error) {
+	volumesOfInterest = make([]string, 0)
+	re := regexp.MustCompile(`[^:]+`)
+	for index, fileToExport := range *exportList {
+		volume := re.FindString(strings.ToLower(fileToExport.FullPath))
+		if volume == "%systemdrive%" {
+			systemDrive := os.Getenv("SYSTEMDRIVE")
+			volume = re.FindString(systemDrive)
+			(*exportList)[index].FullPath = strings.Replace(strings.ToLower(fileToExport.FullPath), "%systemdrive%", volume, -1)
+		} else {
+			var result bool
+			result, err = isLetter(volume)
+			if err != nil {
+				err = fmt.Errorf("isLetter() returned an error: %w", err)
+				return
+			} else if result == false {
+				err = fmt.Errorf("isLetter() indicated that the full path string %s does not start with a letter", fileToExport.FullPath)
+				return
+			}
+		}
+
+		isTracked := false
+		for _, trackedVolumes := range volumesOfInterest {
+			if trackedVolumes == volume {
+				isTracked = true
+				break
+			}
+		}
+
+		if isTracked == true {
+			continue
+		} else {
+			volumesOfInterest = append(volumesOfInterest, volume)
+		}
+	}
+
 	return
 }

@@ -39,8 +39,7 @@ func setupSearchTerms(exportList ListOfFilesToExport) (listOfSearchKeywords list
 		}
 
 		// Normalize everything
-		re := regexp.MustCompile("^.:")
-		value.FullPath = strings.ToLower(re.ReplaceAllString(value.FullPath, ":"))
+		value.FullPath = strings.ToLower(value.FullPath)
 		value.FileName = strings.ToLower(value.FileName)
 
 		if value.IsFullPathRegex == false && strings.HasSuffix(value.FullPath, "\\") == true {
@@ -68,15 +67,6 @@ func setupSearchTerms(exportList ListOfFilesToExport) (listOfSearchKeywords list
 		case true:
 			searchKeywords.fileNameString = ""
 			searchKeywords.fileNameRegex = regexp.MustCompile(value.FileName)
-		}
-
-		if value.IsFileNameRegex == false && value.IsFullPathRegex == false {
-			searchKeywords.fullPathString = value.FullPath + value.FileName
-			searchKeywords.fullPathRegex = nil
-		} else {
-			searchKeywords.fullPathString = ""
-			convertThisToRegex := value.FullPath + value.FileName
-			searchKeywords.fullPathRegex = regexp.MustCompile(convertThisToRegex)
 		}
 
 		listOfSearchKeywords = append(listOfSearchKeywords, searchKeywords)

@@ -53,37 +53,37 @@ func main() {
 	if strings.Contains(opts.DataTypesToCollect, "a") {
 		exportList = collector.ListOfFilesToExport{
 			{
-				FullPath:        `C:\$MFT`,
+				FullPath:        `%SYSTEMDRIVE%:\$MFT`,
 				IsFullPathRegex: false,
 				FileName:        `$MFT`,
 				IsFileNameRegex: false,
 			},
 			{
-				FullPath:        `C:\Windows\System32\config\SYSTEM`,
+				FullPath:        `%SYSTEMDRIVE%:\Windows\System32\config\SYSTEM`,
 				IsFullPathRegex: false,
 				FileName:        `SYSTEM`,
 				IsFileNameRegex: false,
 			},
 			{
-				FullPath:        `C:\Windows\System32\config\SOFTWARE`,
+				FullPath:        `%SYSTEMDRIVE%:\Windows\System32\config\SOFTWARE`,
 				IsFullPathRegex: false,
 				FileName:        `SOFTWARE`,
 				IsFileNameRegex: false,
 			},
 			{
-				FullPath:        `C:\\Windows\\System32\\winevt\\Logs\\.*\.evtx$`,
+				FullPath:        `%SYSTEMDRIVE%:\\Windows\\System32\\winevt\\Logs\\.*\.evtx$`,
 				IsFullPathRegex: true,
 				FileName:        `.*\.evtx$`,
 				IsFileNameRegex: true,
 			},
 			{
-				FullPath:        `C:\\users\\([^\\]+)\\ntuser.dat`,
+				FullPath:        `%SYSTEMDRIVE%:\\users\\([^\\]+)\\ntuser.dat`,
 				IsFullPathRegex: true,
 				FileName:        `ntuser.dat`,
 				IsFileNameRegex: false,
 			},
 			{
-				FullPath:        `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\usrclass.dat`,
+				FullPath:        `%SYSTEMDRIVE%:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\usrclass.dat`,
 				IsFullPathRegex: true,
 				FileName:        `usrclass.dat`,
 				IsFileNameRegex: false,
@@ -92,7 +92,7 @@ func main() {
 	} else {
 		if strings.Contains(opts.DataTypesToCollect, "m") {
 			exportList = append(exportList, collector.FileToExport{
-				FullPath:        `C:\$MFT`,
+				FullPath:        `%SYSTEMDRIVE%:\$MFT`,
 				IsFullPathRegex: false,
 				FileName:        `$MFT`,
 				IsFileNameRegex: false,
@@ -100,13 +100,13 @@ func main() {
 		}
 		if strings.Contains(opts.DataTypesToCollect, "r") {
 			exportList = append(exportList, collector.FileToExport{
-				FullPath:        `C:\Windows\System32\config\SYSTEM`,
+				FullPath:        `%SYSTEMDRIVE%:\Windows\System32\config\SYSTEM`,
 				IsFullPathRegex: false,
 				FileName:        `SYSTEM`,
 				IsFileNameRegex: false,
 			})
 			exportList = append(exportList, collector.FileToExport{
-				FullPath:        `C:\Windows\System32\config\SOFTWARE`,
+				FullPath:        `%SYSTEMDRIVE%:\Windows\System32\config\SOFTWARE`,
 				IsFullPathRegex: false,
 				FileName:        `SOFTWARE`,
 				IsFileNameRegex: false,
@@ -114,13 +114,13 @@ func main() {
 		}
 		if strings.Contains(opts.DataTypesToCollect, "u") {
 			exportList = append(exportList, collector.FileToExport{
-				FullPath:        `C:\\users\\([^\\]+)\\ntuser.dat`,
+				FullPath:        `%SYSTEMDRIVE%:\\users\\([^\\]+)\\ntuser.dat`,
 				IsFullPathRegex: true,
 				FileName:        `ntuser.dat`,
 				IsFileNameRegex: false,
 			})
 			exportList = append(exportList, collector.FileToExport{
-				FullPath:        `C:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\usrclass.dat`,
+				FullPath:        `%SYSTEMDRIVE%:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\usrclass.dat`,
 				IsFullPathRegex: true,
 				FileName:        `usrclass.dat`,
 				IsFileNameRegex: false,
@@ -128,7 +128,7 @@ func main() {
 		}
 		if strings.Contains(opts.DataTypesToCollect, "e") {
 			exportList = append(exportList, collector.FileToExport{
-				FullPath:        `C:\\Windows\\System32\\winevt\\Logs\\.*\\.evtx$`,
+				FullPath:        `%SYSTEMDRIVE%:\\Windows\\System32\\winevt\\Logs\\.*\\.evtx$`,
 				IsFullPathRegex: true,
 				FileName:        `.*\\.evtx$`,
 				IsFileNameRegex: true,
@@ -138,7 +138,7 @@ func main() {
 
 	resultWriter := collector.ZipResultWriter{ZipFileName: opts.ZipName}
 
-	err = collector.Collect("C", exportList, resultWriter)
+	err = collector.Collect(exportList, resultWriter)
 	if err != nil {
 		log.Panic(err)
 	}

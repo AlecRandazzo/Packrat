@@ -40,14 +40,23 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 		return
 	}
 
-	zipFileHandle, err := os.Create(zipResultWriter.ZipFileName)
-	if err != nil {
-		err = fmt.Errorf("failed to create the zip file %v", zipResultWriter.ZipFileName)
-		return
+	var zipFileHandle *os.File
+	if _, err = os.Stat(zipResultWriter.ZipFileName); os.IsNotExist(err) {
+		zipFileHandle, err = os.Create(zipResultWriter.ZipFileName)
+		if err != nil {
+			err = fmt.Errorf("failed to create the zip file %v", zipResultWriter.ZipFileName)
+			return
+		}
+	} else {
+		zipFileHandle, err = os.Open(zipResultWriter.ZipFileName)
+		if err != nil {
+			err = fmt.Errorf("failed to open the zip file %v", zipResultWriter.ZipFileName)
+			return
+		}
 	}
 	defer zipFileHandle.Close()
-	waitForInitialization.Done()
 
+	waitForInitialization.Done()
 	zipWriter := zip.NewWriter(zipFileHandle)
 	defer zipWriter.Close()
 
