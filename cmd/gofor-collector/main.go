@@ -23,7 +23,7 @@ type Options struct {
 	Debug string `short:"d" long:"debug" default:"" description:"Log debug information to output file."`
 	//SendTo             string   `short:"s" long:"sendto" required:"true" description:"Where to send collected files to." choice:"zip"`
 	ZipName            string `short:"z" long:"zipname" description:"Output file name for the zip." required:"true"`
-	DataTypesToCollect string `short:"g" long:"gather" default:"a" description:"Types of data to collect. Concatenate the abbreviation characters together for what you want. The order doesn't matter. Valid values are 'a' for all, 'm' for $MFT, 'r' for system registries, 'u' for user registries, 'e' for event logs. Examples: '/g mrue', '/g a'"`
+	DataTypesToCollect string `short:"g" long:"gather" default:"a" description:"Types of data to collect. Concatenate the abbreviation characters together for what you want. The order doesn't matter. Valid values are 'a' for all, 'm' for $MFT, 'r' for system registries, 'u' for user registries, 'e' for event logs, 'w' for web history. Examples: '/g mrue', '/g a'"`
 }
 
 func init() {
@@ -90,6 +90,12 @@ func main() {
 				FileName:        `usrclass.dat`,
 				IsFileNameRegex: false,
 			},
+			{
+				FullPath:        `%SYSTEMDRIVE%:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\WebCache\\WebCacheV01.dat`,
+				IsFullPathRegex: true,
+				FileName:        `WebCacheV01.dat`,
+				IsFileNameRegex: false,
+			},
 		}
 	} else {
 		if strings.Contains(opts.DataTypesToCollect, "m") {
@@ -136,6 +142,14 @@ func main() {
 				IsFileNameRegex: true,
 			})
 		}
+		if strings.Contains(opts.DataTypesToCollect, "w") {
+			exportList = append(exportList, collector.FileToExport{
+				FullPath:        `%SYSTEMDRIVE%:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\WebCache\\WebCacheV01.dat`,
+				IsFullPathRegex: true,
+				FileName:        `WebCacheV01.dat`,
+				IsFileNameRegex: false,
+			})
+		}
 	}
 
 	fileHandle, err := os.Create(opts.ZipName)
@@ -143,6 +157,8 @@ func main() {
 		err = fmt.Errorf("failed to create zip file %s", opts.ZipName)
 	}
 	zipWriter := zip.NewWriter(fileHandle)
+	defer zipWriter.Close()
+	defer fileHandle.Close()
 
 	resultWriter := collector.ZipResultWriter{
 		ZipWriter: *zipWriter,

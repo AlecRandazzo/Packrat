@@ -1,7 +1,7 @@
 package windowscollector
 
 import (
-	"github.com/AlecRandazzo/GoFor-MFT-Parser"
+	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
 	log "github.com/sirupsen/logrus"
 	syscall "golang.org/x/sys/windows"
 	"io"
@@ -18,6 +18,8 @@ type DataRunsReader struct {
 }
 
 func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfBytesRead int, err error) {
+	numberOfBytesToRead := len(byteSliceToPopulate)
+
 	// Sanity checking
 	if dataRunReader.DataRuns == nil {
 		err = io.ErrUnexpectedEOF
@@ -29,7 +31,8 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 	if dataRunReader.initialized != true {
 		dataRunReader.dataRunTracker = 0
 		dataRunReader.bytesLeftToReadTracker = dataRunReader.DataRuns[dataRunReader.dataRunTracker].Length
-		_, _ = syscall.Seek(dataRunReader.VolumeHandler.Handle, dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
+		dataRunReader.VolumeHandler.lastReadVolumeOffset, _ = syscall.Seek(dataRunReader.VolumeHandler.Handle, dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
+		dataRunReader.VolumeHandler.lastReadVolumeOffset -= int64(numberOfBytesToRead)
 		dataRunReader.initialized = true
 
 		// These are for debug purposes
@@ -48,8 +51,6 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 
 	}
 
-	numberOfBytesToRead := len(byteSliceToPopulate)
-
 	// Figure out how many bytes are left to read
 	if dataRunReader.bytesLeftToReadTracker-int64(numberOfBytesToRead) == 0 {
 		dataRunReader.bytesLeftToReadTracker -= int64(numberOfBytesToRead)
@@ -64,6 +65,7 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 	buffer := make([]byte, numberOfBytesToRead)
 	numberOfBytesRead, _ = syscall.Read(dataRunReader.VolumeHandler.Handle, buffer)
 	copy(byteSliceToPopulate, buffer)
+	dataRunReader.VolumeHandler.lastReadVolumeOffset += int64(numberOfBytesToRead)
 
 	// Check to see if there are any bytes left to read in the current data run
 	if dataRunReader.bytesLeftToReadTracker == 0 {
@@ -88,7 +90,8 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 		dataRunReader.bytesLeftToReadTracker = dataRunReader.DataRuns[dataRunReader.dataRunTracker].Length
 
 		// Seek to the offset of the next datarun
-		_, _ = syscall.Seek(dataRunReader.VolumeHandler.Handle, dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
+		dataRunReader.VolumeHandler.lastReadVolumeOffset, _ = syscall.Seek(dataRunReader.VolumeHandler.Handle, dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
+		dataRunReader.VolumeHandler.lastReadVolumeOffset -= int64(numberOfBytesToRead)
 	}
 
 	return
@@ -102,7 +105,7 @@ func apiFileReader(file foundFile) (reader io.Reader, err error) {
 func rawFileReader(handler VolumeHandler, file foundFile) (reader io.Reader) {
 	reader = &DataRunsReader{
 		VolumeHandler:          handler,
-		DataRuns:               file.dataAttribute.NonResidentDataAttribute.DataRuns,
+		DataRuns:               file.dataRuns,
 		fileName:               file.fullPath,
 		dataRunTracker:         0,
 		bytesLeftToReadTracker: 0,

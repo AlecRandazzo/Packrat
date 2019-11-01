@@ -23,10 +23,11 @@ import (
 )
 
 type VolumeHandler struct {
-	Handle       syscall.Handle
-	VolumeLetter string
-	Vbr          vbr.VolumeBootRecord
-	mftReader    io.Reader
+	Handle               syscall.Handle
+	VolumeLetter         string
+	Vbr                  vbr.VolumeBootRecord
+	mftReader            io.Reader
+	lastReadVolumeOffset int64
 }
 
 func getHandle(volumeLetter string) (handle syscall.Handle, err error) {

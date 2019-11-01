@@ -64,8 +64,8 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 
 	// Open a raw reader on the MFT
 	foundFile := foundFile{
-		dataAttribute: mftRecord0.DataAttribute,
-		fullPath:      "$mft",
+		dataRuns: mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns,
+		fullPath: "$mft",
 	}
 	mftReader := rawFileReader(volumeHandler, foundFile)
 	log.Debug("Obtained a raw io.Reader to the MFT's dataruns.")
@@ -127,7 +127,7 @@ func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSear
 		log.Debugf("Trying to get an io.Reader from the file %s via API.", file.fullPath)
 		reader, err := apiFileReader(file)
 		if err != nil {
-			log.Debugf("Failed to get an io.Reader via API method, trying via raw method against the file's '%s' dataruns: %+v", file.fullPath, file.dataAttribute)
+			log.Debugf("Failed to get an io.Reader via API method, trying via raw method against the file's '%s' dataruns: %+v", file.fullPath, file.dataRuns)
 			// failed to get an API handle, trying to get an io.reader via raw method
 			reader = rawFileReader(volumeHandler, file)
 		}

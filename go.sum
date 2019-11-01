@@ -1,7 +1,7 @@
 github.com/AlecRandazzo/BinaryTransforms v1.2.4 h1:RksWhS1pd0MvNZ1txk6lTPDU3UTvfA4NfFWEFqb6C0k=
 github.com/AlecRandazzo/BinaryTransforms v1.2.4/go.mod h1:QEsIk4ykvbuXNKd5tDwPni0A8P7PR4KfxOP8UtMN9GU=
-github.com/AlecRandazzo/GoFor-MFT-Parser v0.4.0 h1:4Av5kYuIeNiaalbESAeFxtlRfqRbkAy4yk3ozvYIQ1Y=
-github.com/AlecRandazzo/GoFor-MFT-Parser v0.4.0/go.mod h1:hc9ttSItbyzZKdRQQe+pxsp/X9oms7q6nNmBCSk7/Tw=
+github.com/AlecRandazzo/GoFor-MFT-Parser v0.5.1 h1:SlTQJ2tFylRI3TgXK1H0mW5+zbFCNi2oocIGrBGmqu4=
+github.com/AlecRandazzo/GoFor-MFT-Parser v0.5.1/go.mod h1:hc9ttSItbyzZKdRQQe+pxsp/X9oms7q6nNmBCSk7/Tw=
 github.com/AlecRandazzo/GoFor-VBR-Parser v1.0.3 h1:+fUkCOq39dCSbuGTFlpNPXeJd8yW6ZUmTM71mxePAz0=
 github.com/AlecRandazzo/GoFor-VBR-Parser v1.0.3/go.mod h1:hUq+Vem7CNH2QZt8SOwED0ogTKMXF1gtOVIZw7zcWTQ=
 github.com/AlecRandazzo/Timestamp-Parser v1.3.4 h1:3W4wqT4czAOlvWLV0wO2VWKTC9DQINMIqfCTLCG5Ybc=
