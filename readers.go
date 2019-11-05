@@ -9,7 +9,7 @@ import (
 )
 
 type DataRunsReader struct {
-	VolumeHandler          VolumeHandler
+	VolumeHandler          *VolumeHandler
 	DataRuns               mft.DataRuns
 	fileName               string
 	dataRunTracker         int
@@ -21,7 +21,7 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 	numberOfBytesToRead := len(byteSliceToPopulate)
 
 	// Sanity checking
-	if dataRunReader.DataRuns == nil {
+	if len(dataRunReader.DataRuns) == 0 {
 		err = io.ErrUnexpectedEOF
 		log.Warnf("failed to read %s, received: %v", dataRunReader.fileName, err)
 		return
@@ -102,7 +102,7 @@ func apiFileReader(file foundFile) (reader io.Reader, err error) {
 	return
 }
 
-func rawFileReader(handler VolumeHandler, file foundFile) (reader io.Reader) {
+func rawFileReader(handler *VolumeHandler, file foundFile) (reader io.Reader) {
 	reader = &DataRunsReader{
 		VolumeHandler:          handler,
 		DataRuns:               file.dataRuns,

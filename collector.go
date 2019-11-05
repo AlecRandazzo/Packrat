@@ -31,7 +31,7 @@ func Collect(exportList ListOfFilesToExport, resultWriter ResultWriter) (err err
 			return
 		}
 
-		err = getFiles(volumeHandler, resultWriter, searchTerms)
+		err = getFiles(&volumeHandler, resultWriter, searchTerms)
 		if err != nil {
 			err = fmt.Errorf("getFiles() failed to get files: %w", err)
 			return
@@ -40,7 +40,7 @@ func Collect(exportList ListOfFilesToExport, resultWriter ResultWriter) (err err
 	return
 }
 
-func getFiles(volumeHandler VolumeHandler, resultWriter ResultWriter, listOfSearchKeywords listOfSearchTerms) (err error) {
+func getFiles(volumeHandler *VolumeHandler, resultWriter ResultWriter, listOfSearchKeywords listOfSearchTerms) (err error) {
 	// Init a few things
 	fileReaders := make(chan fileReader, 100)
 	waitForInitialization := sync.WaitGroup{}

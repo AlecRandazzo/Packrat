@@ -8,7 +8,7 @@ import (
 	syscall "golang.org/x/sys/windows"
 )
 
-func parseMFTRecord0(volume VolumeHandler) (mftRecord0 mft.MasterFileTableRecord, err error) {
+func parseMFTRecord0(volume *VolumeHandler) (mftRecord0 mft.MasterFileTableRecord, err error) {
 	// Move handle pointer back to beginning of volume
 	_, err = syscall.Seek(volume.Handle, 0x00, 0)
 	if err != nil {
