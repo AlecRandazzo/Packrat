@@ -124,18 +124,18 @@ func getFiles(volumeHandler *VolumeHandler, resultWriter ResultWriter, listOfSea
 
 	for _, file := range foundFiles {
 		// try to get an io.reader via api first
-		log.Debugf("Trying to get an io.Reader from the file %s via API.", file.fullPath)
 		reader, err := apiFileReader(file)
 		if err != nil {
-			log.Debugf("Failed to get an io.Reader via API method, trying via raw method against the file's '%s' dataruns: %+v", file.fullPath, file.dataRuns)
+			log.Debugf("Got a raw io.Reader for '%s' with data runs: %+v", file.fullPath, file.dataRuns)
 			// failed to get an API handle, trying to get an io.reader via raw method
 			reader = rawFileReader(volumeHandler, file)
+		} else {
+			log.Debugf("Got an API io.Reader for '%s'.", file.fullPath)
 		}
 		fileReader := fileReader{
 			fullPath: file.fullPath,
 			reader:   reader,
 		}
-		log.Debugf("Passing a fileReader for %s to our ResultWriter", fileReader.fullPath)
 		fileReaders <- fileReader
 	}
 	close(fileReaders)

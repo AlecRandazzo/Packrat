@@ -43,7 +43,6 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 		if openChannel == false {
 			break
 		}
-		log.Debugf("Reading %s", fileReader.fullPath)
 		normalizedFilePath := strings.ReplaceAll(fileReader.fullPath, "\\", "_")
 		normalizedFilePath = strings.ReplaceAll(normalizedFilePath, ":", "_")
 		var writer io.Writer
@@ -52,12 +51,11 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 			fmt.Println(err)
 		}
 		var readErr error
-		for readErr == nil {
+		for {
 			buffer := make([]byte, 1024)
 			_, readErr = fileReader.reader.Read(buffer)
 			if readErr != nil {
-				log.Debugf("Stopped reading %s due to %v", fileReader.fullPath, err)
-				continue
+				break
 			}
 			bytesWritten, writeErr := writer.Write(buffer)
 			if writeErr != nil {
@@ -66,7 +64,9 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 			writtenCounter += bytesWritten
 		}
 		if readErr == io.EOF {
-			log.Debugf("Written a total of %d bytes for the file %s", writtenCounter, fileReader.fullPath)
+			log.Debugf("Successfully collected '%s'", fileReader.fullPath)
+		} else {
+			log.Debugf("Failed to collect '%s' due to %v", fileReader.fullPath, readErr)
 		}
 	}
 	err = nil

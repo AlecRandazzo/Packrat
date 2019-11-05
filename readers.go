@@ -41,9 +41,9 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 			for _, dataRun := range dataRunReader.DataRuns {
 				totalSize += dataRun.Length
 			}
-			log.Debugf("Reading the file '%s' via raw method. The file has %d data runs with a total size of %d. First data run is at the absolute offset of %d",
-				dataRunReader.fileName,
+			log.Debugf("Reading data run number 1 of %d for file '%s' which has a length of %d bytes at absolute offset %d",
 				len(dataRunReader.DataRuns),
+				dataRunReader.fileName,
 				totalSize,
 				dataRunReader.DataRuns[0].AbsoluteOffset,
 			)
@@ -63,25 +63,17 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 
 	// Read from the data run
 	buffer := make([]byte, numberOfBytesToRead)
+	dataRunReader.VolumeHandler.lastReadVolumeOffset += int64(len(buffer))
 	numberOfBytesRead, _ = syscall.Read(dataRunReader.VolumeHandler.Handle, buffer)
 	copy(byteSliceToPopulate, buffer)
-	dataRunReader.VolumeHandler.lastReadVolumeOffset += int64(numberOfBytesToRead)
 
 	// Check to see if there are any bytes left to read in the current data run
 	if dataRunReader.bytesLeftToReadTracker == 0 {
 		// Check to see if we have read all the data runs.
 		if dataRunReader.dataRunTracker+1 == len(dataRunReader.DataRuns) {
 			err = io.EOF
-			log.Debugf("Finished reading the file '%s' via raw method.", dataRunReader.fileName)
 			return
 		}
-		log.Debugf("Finished reading via raw method data run number %d for the file '%s'. There are %d data runs left. Moving onto data run number %d which has a length of %d bytes.",
-			dataRunReader.dataRunTracker,
-			dataRunReader.fileName,
-			len(dataRunReader.DataRuns)-dataRunReader.dataRunTracker-1,
-			dataRunReader.dataRunTracker+1,
-			dataRunReader.DataRuns[dataRunReader.dataRunTracker+1].Length,
-		)
 
 		// Increment our tracker
 		dataRunReader.dataRunTracker++
@@ -91,7 +83,15 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 
 		// Seek to the offset of the next datarun
 		dataRunReader.VolumeHandler.lastReadVolumeOffset, _ = syscall.Seek(dataRunReader.VolumeHandler.Handle, dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
-		dataRunReader.VolumeHandler.lastReadVolumeOffset -= int64(numberOfBytesToRead)
+		dataRunReader.VolumeHandler.lastReadVolumeOffset -= int64(len(buffer))
+
+		log.Debugf("Reading data run number %d of %d for file '%s' which has a length of %d bytes at absolute offset %d",
+			dataRunReader.dataRunTracker+1,
+			len(dataRunReader.DataRuns),
+			dataRunReader.fileName,
+			dataRunReader.DataRuns[dataRunReader.dataRunTracker].Length,
+			dataRunReader.VolumeHandler.lastReadVolumeOffset+int64(len(buffer)),
+		)
 	}
 
 	return
