@@ -25,7 +25,7 @@ type ResultWriter interface {
 
 type ZipResultWriter struct {
 	ZipWriter  *zip.Writer
-	fileHandle *os.File
+	FileHandle *os.File
 }
 
 type fileReader struct {
@@ -71,7 +71,7 @@ func (zipResultWriter *ZipResultWriter) ResultWriter(fileReaders *chan fileReade
 		}
 	}
 	zipResultWriter.ZipWriter.Close()
-	zipResultWriter.fileHandle.Close()
+	zipResultWriter.FileHandle.Close()
 	err = nil
 	return
 }

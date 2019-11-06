@@ -158,7 +158,8 @@ func main() {
 	}
 	zipWriter := zip.NewWriter(fileHandle)
 	resultWriter := collector.ZipResultWriter{
-		ZipWriter: zipWriter,
+		ZipWriter:  zipWriter,
+		FileHandle: fileHandle,
 	}
 
 	err = collector.Collect(exportList, &resultWriter)
