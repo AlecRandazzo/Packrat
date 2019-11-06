@@ -10,7 +10,9 @@
 package main
 
 import (
-	collector "github.com/AlecRandazzo/GoFor-Collector"
+	"archive/zip"
+	"fmt"
+	collector "github.com/AlecRandazzo/GoFor-Windows-Collector"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -21,7 +23,13 @@ type Options struct {
 	Debug string `short:"d" long:"debug" default:"" description:"Log debug information to output file."`
 	//SendTo             string   `short:"s" long:"sendto" required:"true" description:"Where to send collected files to." choice:"zip"`
 	ZipName            string `short:"z" long:"zipname" description:"Output file name for the zip." required:"true"`
-	DataTypesToCollect string `short:"g" long:"gather" default:"a" description:"Types of data to collect. Concatenate the abbreviation characters together for what you want. The order doesn't matter. Valid values are 'a' for all, 'm' for $MFT, 'r' for system registries, 'u' for user registries, 'e' for event logs. Examples: '/g mrue', '/g a'"`
+	DataTypesToCollect string `short:"g" long:"gather" default:"a" description:"Types of data to collect. Concatenate the abbreviation characters together for what you want. The order doesn't matter. Valid values are 'a' for all, 'm' for $MFT, 'r' for system registries, 'u' for user registries, 'e' for event logs, 'w' for web history. Examples: '/g mrue', '/g a'"`
+}
+
+func init() {
+	// Log configuration
+	log.SetFormatter(&log.JSONFormatter{})
+	// runtime.GOMAXPROCS(1)
 }
 
 func main() {
@@ -43,33 +51,119 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	client := collector.CollectorClient{}
-	var exportList collector.ExportList
+	var exportList collector.ListOfFilesToExport
 	if strings.Contains(opts.DataTypesToCollect, "a") {
-		exportList = collector.ExportList{
-			{FullPath: "C:\\\\$MFT", Type: "equal"},
-			{FullPath: "C:\\Windows\\System32\\config\\SYSTEM", Type: "equal"},
-			{FullPath: "C:\\Windows\\System32\\config\\SOFTWARE", Type: "equal"},
-			{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"},
-			{FullPath: "C:\\\\users\\\\([^\\\\]+)\\\\ntuser.dat$", Type: "regex"},
-			{FullPath: "C:\\\\Users\\\\([^\\\\]+)\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\usrclass.dat$", Type: "regex"},
+		exportList = collector.ListOfFilesToExport{
+			{
+				FullPath:        `%SYSTEMDRIVE%:\$MFT`,
+				IsFullPathRegex: false,
+				FileName:        `$MFT`,
+				IsFileNameRegex: false,
+			},
+			{
+				FullPath:        `%SYSTEMDRIVE%:\Windows\System32\config\SYSTEM`,
+				IsFullPathRegex: false,
+				FileName:        `SYSTEM`,
+				IsFileNameRegex: false,
+			},
+			{
+				FullPath:        `%SYSTEMDRIVE%:\Windows\System32\config\SOFTWARE`,
+				IsFullPathRegex: false,
+				FileName:        `SOFTWARE`,
+				IsFileNameRegex: false,
+			},
+			{
+				FullPath:        `%SYSTEMDRIVE%:\\Windows\\System32\\winevt\\Logs\\.*\.evtx$`,
+				IsFullPathRegex: true,
+				FileName:        `.*\.evtx$`,
+				IsFileNameRegex: true,
+			},
+			{
+				FullPath:        `%SYSTEMDRIVE%:\\users\\([^\\]+)\\ntuser.dat`,
+				IsFullPathRegex: true,
+				FileName:        `ntuser.dat`,
+				IsFileNameRegex: false,
+			},
+			{
+				FullPath:        `%SYSTEMDRIVE%:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\usrclass.dat`,
+				IsFullPathRegex: true,
+				FileName:        `usrclass.dat`,
+				IsFileNameRegex: false,
+			},
+			{
+				FullPath:        `%SYSTEMDRIVE%:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\WebCache\\WebCacheV01.dat`,
+				IsFullPathRegex: true,
+				FileName:        `WebCacheV01.dat`,
+				IsFileNameRegex: false,
+			},
 		}
 	} else {
 		if strings.Contains(opts.DataTypesToCollect, "m") {
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\$MFT", Type: "equal"})
+			exportList = append(exportList, collector.FileToExport{
+				FullPath:        `%SYSTEMDRIVE%:\$MFT`,
+				IsFullPathRegex: false,
+				FileName:        `$MFT`,
+				IsFileNameRegex: false,
+			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "r") {
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\Windows\\System32\\config\\SYSTEM", Type: "equal"})
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\Windows\\System32\\config\\SOFTWARE", Type: "equal"})
+			exportList = append(exportList, collector.FileToExport{
+				FullPath:        `%SYSTEMDRIVE%:\Windows\System32\config\SYSTEM`,
+				IsFullPathRegex: false,
+				FileName:        `SYSTEM`,
+				IsFileNameRegex: false,
+			})
+			exportList = append(exportList, collector.FileToExport{
+				FullPath:        `%SYSTEMDRIVE%:\Windows\System32\config\SOFTWARE`,
+				IsFullPathRegex: false,
+				FileName:        `SOFTWARE`,
+				IsFileNameRegex: false,
+			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "u") {
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\users\\\\([^\\\\]+)\\\\ntuser.dat$", Type: "regex"})
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\Users\\\\([^\\\\]+)\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\usrclass.dat$", Type: "regex"})
+			exportList = append(exportList, collector.FileToExport{
+				FullPath:        `%SYSTEMDRIVE%:\\users\\([^\\]+)\\ntuser.dat`,
+				IsFullPathRegex: true,
+				FileName:        `ntuser.dat`,
+				IsFileNameRegex: false,
+			})
+			exportList = append(exportList, collector.FileToExport{
+				FullPath:        `%SYSTEMDRIVE%:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\usrclass.dat`,
+				IsFullPathRegex: true,
+				FileName:        `usrclass.dat`,
+				IsFileNameRegex: false,
+			})
 		}
 		if strings.Contains(opts.DataTypesToCollect, "e") {
-			exportList = append(exportList, collector.FileToExport{FullPath: "C:\\\\Windows\\\\System32\\\\winevt\\\\Logs\\\\.*\\.evtx$", Type: "regex"})
+			exportList = append(exportList, collector.FileToExport{
+				FullPath:        `%SYSTEMDRIVE%:\\Windows\\System32\\winevt\\Logs\\.*\\.evtx$`,
+				IsFullPathRegex: true,
+				FileName:        `.*\\.evtx$`,
+				IsFileNameRegex: true,
+			})
+		}
+		if strings.Contains(opts.DataTypesToCollect, "w") {
+			exportList = append(exportList, collector.FileToExport{
+				FullPath:        `%SYSTEMDRIVE%:\\Users\\([^\\]+)\\AppData\\Local\\Microsoft\\Windows\\WebCache\\WebCacheV01.dat`,
+				IsFullPathRegex: true,
+				FileName:        `WebCacheV01.dat`,
+				IsFileNameRegex: false,
+			})
 		}
 	}
 
-	client.ExportToZip(exportList, opts.ZipName)
+	fileHandle, err := os.Create(opts.ZipName)
+	if err != nil {
+		err = fmt.Errorf("failed to create zip file %s", opts.ZipName)
+	}
+	zipWriter := zip.NewWriter(fileHandle)
+	resultWriter := collector.ZipResultWriter{
+		ZipWriter:  zipWriter,
+		FileHandle: fileHandle,
+	}
+
+	err = collector.Collect(exportList, &resultWriter)
+	if err != nil {
+		log.Panic(err)
+	}
 }
