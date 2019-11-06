@@ -1,11 +1,11 @@
 github.com/AlecRandazzo/BinaryTransforms v1.2.4 h1:RksWhS1pd0MvNZ1txk6lTPDU3UTvfA4NfFWEFqb6C0k=
 github.com/AlecRandazzo/BinaryTransforms v1.2.4/go.mod h1:QEsIk4ykvbuXNKd5tDwPni0A8P7PR4KfxOP8UtMN9GU=
-github.com/AlecRandazzo/GoFor-MFT-Parser v0.5.2 h1:USVgT4IwCcI7nbL00N2r0KQ0M3dFSrQdAhCOBS6ymHQ=
-github.com/AlecRandazzo/GoFor-MFT-Parser v0.5.2/go.mod h1:a9GVXQ4FH39tbNRdZRcbbMNRVnxphd0DsNeg2fbFW4E=
+github.com/AlecRandazzo/GoFor-MFT-Parser v0.5.3 h1:dlh1q6GPu7t0n+7oLsS8s1TDLscMpJiYBNS2Nn+xwhQ=
+github.com/AlecRandazzo/GoFor-MFT-Parser v0.5.3/go.mod h1:pnR7tjPHGUvLzXPUTtPCWND//W9kMQSuIiLR2LDNMok=
 github.com/AlecRandazzo/GoFor-VBR-Parser v1.0.3 h1:+fUkCOq39dCSbuGTFlpNPXeJd8yW6ZUmTM71mxePAz0=
 github.com/AlecRandazzo/GoFor-VBR-Parser v1.0.3/go.mod h1:hUq+Vem7CNH2QZt8SOwED0ogTKMXF1gtOVIZw7zcWTQ=
-github.com/AlecRandazzo/Timestamp-Parser v1.3.4 h1:3W4wqT4czAOlvWLV0wO2VWKTC9DQINMIqfCTLCG5Ybc=
-github.com/AlecRandazzo/Timestamp-Parser v1.3.4/go.mod h1:YmaSD1RdBnIgUKiLYjlWWxFScWteQa/8mke4W/+1Vuw=
+github.com/AlecRandazzo/Timestamp-Parser v1.3.5 h1:QNevvB+hp8Yo2r6+VFWWYQ74aHdLcHr2+8FshQVWCks=
+github.com/AlecRandazzo/Timestamp-Parser v1.3.5/go.mod h1:Hghe9Xbp54kT3qCZ2dtjMeyqJd6YfLn2Hfgc7nEU83g=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/go-cmp v0.3.1 h1:Xye71clBPdm5HgqGwUkwhbynsUJZhDbS20FvLhQ2izg=
@@ -21,6 +21,5 @@ github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6Mwd
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1w=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
+golang.org/x/sys v0.0.0-20190422165155-953cdadca894 h1:Cz4ceDQGXuKRnVBDTS23GTn/pU5OE2C0WrNTOYK1Uuc=
 golang.org/x/sys v0.0.0-20190422165155-953cdadca894/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20191010194322-b09406accb47 h1:/XfQ9z7ib8eEJX2hdgFTZJ/ntt0swNk5oYBziWeTCvY=
-golang.org/x/sys v0.0.0-20191010194322-b09406accb47/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
