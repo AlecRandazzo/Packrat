@@ -14,6 +14,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"os"
 	"strings"
 	"sync"
 )
@@ -23,7 +24,8 @@ type ResultWriter interface {
 }
 
 type ZipResultWriter struct {
-	ZipWriter zip.Writer
+	ZipWriter  *zip.Writer
+	fileHandle *os.File
 }
 
 type fileReader struct {
@@ -31,8 +33,7 @@ type fileReader struct {
 	reader   io.Reader
 }
 
-func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader, waitForInitialization *sync.WaitGroup, waitForFileCopying *sync.WaitGroup) (err error) {
-	defer zipResultWriter.ZipWriter.Close()
+func (zipResultWriter *ZipResultWriter) ResultWriter(fileReaders *chan fileReader, waitForInitialization *sync.WaitGroup, waitForFileCopying *sync.WaitGroup) (err error) {
 	defer waitForFileCopying.Done()
 
 	openChannel := true
@@ -69,6 +70,8 @@ func (zipResultWriter ZipResultWriter) ResultWriter(fileReaders *chan fileReader
 			log.Debugf("Failed to collect '%s' due to %v", fileReader.fullPath, readErr)
 		}
 	}
+	zipResultWriter.ZipWriter.Close()
+	zipResultWriter.fileHandle.Close()
 	err = nil
 	return
 }

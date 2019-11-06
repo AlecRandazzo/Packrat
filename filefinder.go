@@ -175,6 +175,7 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 type foundFile struct {
 	dataRuns mft.DataRuns
 	fullPath string
+	fileSize int64
 }
 
 type foundFiles []foundFile
@@ -195,6 +196,7 @@ func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMat
 						foundFile := foundFile{
 							dataRuns: possibleMatch.dataRuns,
 							fullPath: possibleMatchFullPath,
+							fileSize: int64(possibleMatch.fileNameAttribute.PhysicalFileSize),
 						}
 						log.Debugf("Found a true match: %+v", foundFile)
 						foundFilesList = append(foundFilesList, foundFile)

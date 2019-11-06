@@ -157,14 +157,11 @@ func main() {
 		err = fmt.Errorf("failed to create zip file %s", opts.ZipName)
 	}
 	zipWriter := zip.NewWriter(fileHandle)
-	defer zipWriter.Close()
-	defer fileHandle.Close()
-
 	resultWriter := collector.ZipResultWriter{
-		ZipWriter: *zipWriter,
+		ZipWriter: zipWriter,
 	}
 
-	err = collector.Collect(exportList, resultWriter)
+	err = collector.Collect(exportList, &resultWriter)
 	if err != nil {
 		log.Panic(err)
 	}
