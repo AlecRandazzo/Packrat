@@ -8,7 +8,7 @@ orbs:
 jobs:
   build:
     executor:
-      name: default
+      name: win/default
       shell: powershell.exe
     steps:
       - checkout
