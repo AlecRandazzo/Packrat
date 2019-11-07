@@ -7,7 +7,6 @@ orbs:
   win: circleci/windows@1.0.0
 jobs:
   build:
-    working_directory: C:\Users\circleci
     executor:
       name: win/vs2019
       shell: powershell.exe
