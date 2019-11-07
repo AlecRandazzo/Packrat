@@ -3,7 +3,6 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2.1
 orbs:
-  codecov: codecov/codecov@1.0.5
   windows: circleci/windows@2.1.0
 jobs:
   build:
@@ -19,5 +18,5 @@ jobs:
       - run: mv .\go1.13.4.windows-amd64\go C:\
       - run: go get -v -t -d ./...
       - run: go test -v . -race -coverprofile=coverage.txt -covermode=atomic
-      - codecov/upload:
-        file: ./coverage.txt
+      - run: dotnet tool install --global Codecov.Tool
+      - run: codecov -f .\coverage.txt -t ${CODECOV_TOKEN}
