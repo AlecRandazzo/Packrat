@@ -4,7 +4,7 @@
 version: 2.1
 orbs:
   codecov: codecov/codecov@1.0.5
-  win: circleci/windows@1.0.0
+  win: circleci/windows@2.1.0
 jobs:
   build:
     executor:
@@ -12,11 +12,6 @@ jobs:
       shell: powershell.exe
     steps:
       - checkout
-      - run: $ProgressPreference = "SilentlyContinue"
-      - run: rm -r C:\Go
-      - run: (New-Object System.Net.WebClient).DownloadFile("https://dl.google.com/go/go1.13.4.windows-amd64.zip", "go1.13.4.windows-amd64.zip")
-      - run: Expand-Archive go1.13.4.windows-amd64.zip
-      - run: mv .\go1.13.4.windows-amd64\go C:\
       - run: go get -v -t -d ./...
       - run: go test -v . -race -coverprofile=coverage.txt -covermode=atomic
       - codecov/upload:
