@@ -7,5 +7,5 @@ require (
 	github.com/AlecRandazzo/GoFor-VBR-Parser v1.0.3
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/sirupsen/logrus v1.4.2
-	golang.org/x/sys v0.0.0-20190422165155-953cdadca894
+	golang.org/x/sys v0.0.0-20191105231009-c1f44814a5cd
 )

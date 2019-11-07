@@ -3,28 +3,20 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2.1
 orbs:
-  codecov: codecov/codecov@1.0.5
+  windows: circleci/windows@2.1.0
 jobs:
   build:
-    docker:
-      # specify the version
-      - image: circleci/golang:1.13.4
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    #### TEMPLATE_NOTE: go expects specific checkout path representing url
-    #### expecting it in the form of
-    ####   /go/src/github.com/circleci/go-tool
-    ####   /go/src/bitbucket.org/circleci/go-tool
-    working_directory: /go/src/github.com/AlecRandazzo/GoFor-Windows-Collector
+    executor:
+      name: windows/default
+      shell: powershell.exe
     steps:
       - checkout
-
-      # specify any bash command here prefixed with `run: `
+      - run: $ProgressPreference = "SilentlyContinue"
+      - run: rm -r C:\Go
+      - run: (New-Object System.Net.WebClient).DownloadFile("https://dl.google.com/go/go1.13.4.windows-amd64.zip", "go1.13.4.windows-amd64.zip")
+      - run: Expand-Archive go1.13.4.windows-amd64.zip
+      - run: mv .\go1.13.4.windows-amd64\go C:\
       - run: go get -v -t -d ./...
       - run: go test -v . -race -coverprofile=coverage.txt -covermode=atomic
-      - codecov/upload:
-        file: ./coverage.txt
+      - run: dotnet tool install --global Codecov.Tool
+      - run: codecov -f .\coverage.txt -t ${CODECOV_TOKEN}

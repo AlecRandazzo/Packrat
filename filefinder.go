@@ -125,7 +125,7 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 				listOfPossibleMatches = append(listOfPossibleMatches, aPossibleMatch)
 				continue
 			} else {
-				log.Debugf("Found a possible match which has an attribute list. File name is '%s' and its MFT offset is %d. Here is the attribute list: Here is the MFT record hex: %x", fileNameAttribute.FileName, volumeHandler.lastReadVolumeOffset, attributeListAttributes, buffer)
+				log.Debugf("Found a possible match which has an attribute list. File name is '%s' and its MFT offset is %d. Here is the attribute list: %+v Here is the MFT record hex: %x", fileNameAttribute.FileName, volumeHandler.lastReadVolumeOffset, attributeListAttributes, buffer)
 				trackThisForLater := mftRecordWithNonResidentAttributes{
 					fnAttribute:             fileNameAttribute,
 					dataAttribute:           dataAttribute,
