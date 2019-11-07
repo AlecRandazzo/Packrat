@@ -1,6 +1,6 @@
 module github.com/AlecRandazzo/GoFor-Windows-Collector
 
-go 1.13.3
+go 1.13.4
 
 require (
 	github.com/AlecRandazzo/GoFor-MFT-Parser v0.5.3
