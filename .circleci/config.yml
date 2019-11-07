@@ -11,6 +11,8 @@ jobs:
       name: win/vs2019
       shell: powershell.exe
     steps:
+      - run: mkdir C:\windows\temp\gofor
+      - run: cd C:\windows\temp\gofor
       - run: $ProgressPreference = "SilentlyContinue"
       - run: rm -r C:\Go
       - run: (New-Object System.Net.WebClient).DownloadFile("https://dl.google.com/go/go1.13.4.windows-amd64.zip", "go1.13.4.windows-amd64.zip")
