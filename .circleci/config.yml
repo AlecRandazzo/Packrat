@@ -7,18 +7,18 @@ orbs:
   win: circleci/windows@1.0.0
 jobs:
   build:
-    working_directory: C:\Users\circleci\GoFor
+    working_directory: C:\Users\circleci
     executor:
       name: win/vs2019
       shell: powershell.exe
     steps:
-      - run: mkdir C:\windows\temp
-      - run: cd C:\windows\temp
       - run: $ProgressPreference = "SilentlyContinue"
       - run: rm -r C:\Go
       - run: (New-Object System.Net.WebClient).DownloadFile("https://dl.google.com/go/go1.13.4.windows-amd64.zip", "go1.13.4.windows-amd64.zip")
       - run: Expand-Archive go1.13.4.windows-amd64.zip
       - run: mv .\go1.13.4.windows-amd64\go C:\
+      - run: mkdir gofor
+      - run: cd .\gofor
       - checkout
       - run: go get -v -t -d ./...
       - run: go test -v . -race -coverprofile=coverage.txt -covermode=atomic
