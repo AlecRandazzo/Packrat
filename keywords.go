@@ -51,10 +51,10 @@ func setupSearchTerms(exportList ListOfFilesToExport) (listOfSearchKeywords list
 		value.FullPath = strings.ToLower(value.FullPath)
 		value.FileName = strings.ToLower(value.FileName)
 
-		if value.IsFullPathRegex == false && strings.HasSuffix(value.FullPath, "\\") == true {
+		if value.IsFullPathRegex == false && strings.HasSuffix(value.FullPath, `\`) == true {
 			err = fmt.Errorf("file path '%s' has a trailing '\\'", value.FullPath)
 			return
-		} else if value.IsFullPathRegex == true && strings.HasSuffix(value.FullPath, "\\\\") == true {
+		} else if value.IsFullPathRegex == true && strings.HasSuffix(value.FullPath, `\`) == true {
 			err = fmt.Errorf("file path '%s' has missing a trailing '\\\\'", value.FullPath)
 			return
 		}
