@@ -14,7 +14,6 @@ import (
 	"fmt"
 	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
 	log "github.com/sirupsen/logrus"
-	syscall "golang.org/x/sys/windows"
 	"io"
 	"strings"
 )
@@ -149,9 +148,9 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 				case 0x80:
 					nonResidentRecordNumber := record.attributeListAttributes[attributeCounter].MFTReferenceRecordNumber
 					absoluteVolumeOffset := recordOffsetTracker[nonResidentRecordNumber]
-					_, _ = syscall.Seek(newVolumeHandle, absoluteVolumeOffset, 0)
+					_, _ = newVolumeHandle.Seek(absoluteVolumeOffset, 0)
 					buffer := mft.RawMasterFileTableRecord(make([]byte, volumeHandler.Vbr.BytesPerCluster))
-					_, _ = syscall.Read(newVolumeHandle, buffer)
+					_, _ = newVolumeHandle.Read(buffer)
 					mftRecord, _ := buffer.Parse(volumeHandler.Vbr.BytesPerCluster)
 					log.Debugf("Went to absolute offset %d to get a non resident data attribute with record number %d. Parsed the record for the values %+v. Raw hex: %x", absoluteVolumeOffset, nonResidentRecordNumber, mftRecord, buffer)
 					tempDataRunCounter := 0

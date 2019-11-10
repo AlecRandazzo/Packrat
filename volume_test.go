@@ -1,7 +1,7 @@
 package windowscollector
 
 import (
-	"golang.org/x/sys/windows"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -39,7 +39,7 @@ func Test_getHandle(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       args
-		wantHandle windows.Handle
+		wantHandle *os.File
 		wantErr    bool
 	}{
 		// TODO: Add test cases.

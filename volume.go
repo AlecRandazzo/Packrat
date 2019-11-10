@@ -23,25 +23,26 @@ import (
 )
 
 type VolumeHandler struct {
-	Handle               syscall.Handle
+	Handle               *os.File
 	VolumeLetter         string
 	Vbr                  vbr.VolumeBootRecord
 	mftReader            io.Reader
 	lastReadVolumeOffset int64
 }
 
-func getHandle(volumeLetter string) (handle syscall.Handle, err error) {
+func getHandle(volumeLetter string) (handle *os.File, err error) {
 	dwDesiredAccess := uint32(0x80000000) //0x80 FILE_READ_ATTRIBUTES
 	dwShareMode := uint32(0x02 | 0x01)
 	dwCreationDisposition := uint32(0x03)
 	dwFlagsAndAttributes := uint32(0x00)
 
 	volumePath, _ := syscall.UTF16PtrFromString(fmt.Sprintf("\\\\.\\%s:", volumeLetter))
-	handle, err = syscall.CreateFile(volumePath, dwDesiredAccess, dwShareMode, nil, dwCreationDisposition, dwFlagsAndAttributes, 0)
+	syscallHandle, err := syscall.CreateFile(volumePath, dwDesiredAccess, dwShareMode, nil, dwCreationDisposition, dwFlagsAndAttributes, 0)
 	if err != nil {
 		err = fmt.Errorf("getHandle() failed to get handle to volume %s: %w", volumeLetter, err)
 		return
 	}
+	handle = os.NewFile(uintptr(syscallHandle), "")
 	return
 }
 
@@ -57,7 +58,7 @@ func GetVolumeHandler(volumeLetter string) (volume VolumeHandler, err error) {
 
 	// Parse the VBR to get details we need about the volume.
 	volumeBootRecord := make([]byte, volumeBootRecordSize)
-	_, err = syscall.Read(volume.Handle, volumeBootRecord)
+	_, err = volume.Handle.Read(volumeBootRecord)
 	if err != nil {
 		err = fmt.Errorf("GetVolumeHandler() failed to read the volume boot record on volume %v: %w", volumeLetter, err)
 		return

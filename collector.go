@@ -13,7 +13,6 @@ import (
 	"fmt"
 	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
 	log "github.com/sirupsen/logrus"
-	syscall "golang.org/x/sys/windows"
 	"io"
 	"sync"
 )
@@ -68,7 +67,7 @@ func getFiles(volumeHandler *VolumeHandler, resultWriter ResultWriter, listOfSea
 	log.Debugf("Parsed the MFT's MFT record and got the following: %+v", mftRecord0)
 
 	// Go back to the beginning of the mft record
-	_, _ = syscall.Seek(volumeHandler.Handle, volumeHandler.Vbr.MftByteOffset, 0)
+	_, _ = volumeHandler.Handle.Seek(volumeHandler.Vbr.MftByteOffset, 0)
 	log.Debugf("Seeked back to the beginning offset to the MFT at offset %d", volumeHandler.Vbr.MftByteOffset)
 
 	// Open a raw reader on the MFT
