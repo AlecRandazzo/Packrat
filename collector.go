@@ -17,7 +17,8 @@ import (
 	"sync"
 )
 
-func Collect(exportList ListOfFilesToExport, resultWriter ResultWriter) (err error) {
+func Collect(injectedHandlerDependency Handler, exportList ListOfFilesToExport, resultWriter ResultWriter) (err error) {
+	// volumeHandler as an arg is a dependency injection
 	log.Debugf("Attempting to acquire the following files %+v", exportList)
 	volumesOfInterest, err := identifyVolumesOfInterest(&exportList)
 	if err != nil {
@@ -33,7 +34,7 @@ func Collect(exportList ListOfFilesToExport, resultWriter ResultWriter) (err err
 
 	for _, volumeLetter := range volumesOfInterest {
 		var volumeHandler VolumeHandler
-		volumeHandler, err = GetVolumeHandler(volumeLetter)
+		volumeHandler, err = GetVolumeHandler(volumeLetter, injectedHandlerDependency)
 		if err != nil {
 			err = fmt.Errorf("GetVolumeHandler() failed to get a handle to the volume %s: %w", volumeLetter, err)
 			return

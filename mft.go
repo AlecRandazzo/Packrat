@@ -12,7 +12,7 @@ package windowscollector
 import (
 	"errors"
 	"fmt"
-	"github.com/AlecRandazzo/GoFor-MFT-Parser"
+	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
 	log "github.com/sirupsen/logrus"
 )
 

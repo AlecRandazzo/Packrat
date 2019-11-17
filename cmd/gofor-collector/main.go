@@ -161,8 +161,8 @@ func main() {
 		ZipWriter:  zipWriter,
 		FileHandle: fileHandle,
 	}
-
-	err = collector.Collect(exportList, &resultWriter)
+	var volume collector.VolumeHandler
+	err = collector.Collect(volume, exportList, &resultWriter)
 	if err != nil {
 		log.Panic(err)
 	}

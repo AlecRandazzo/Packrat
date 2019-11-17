@@ -1,6 +1,9 @@
 package windowscollector
 
 import (
+	"errors"
+	vbr "github.com/AlecRandazzo/GoFor-VBR-Parser"
+	"io"
 	"os"
 	"reflect"
 	"testing"
@@ -8,51 +11,127 @@ import (
 
 func TestGetVolumeHandler(t *testing.T) {
 	type args struct {
-		volumeLetter string
+		volumeLetter  string
+		volumeHandler dummyHandler
 	}
 	tests := []struct {
-		name       string
-		args       args
-		wantVolume VolumeHandler
-		wantErr    bool
+		name     string
+		args     args
+		wantVBR  vbr.VolumeBootRecord
+		wantErr  bool
+		filePath string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			args: args{
+				volumeLetter:  "C",
+				volumeHandler: dummyHandler{},
+			},
+			wantVBR: vbr.VolumeBootRecord{
+				VolumeLetter:           "",
+				BytesPerSector:         512,
+				SectorsPerCluster:      8,
+				BytesPerCluster:        4096,
+				MftByteOffset:          4096,
+				MftRecordSize:          1024,
+				ClustersPerIndexRecord: 1,
+			},
+			wantErr:  false,
+			filePath: `test\testdata\dummyntfs`,
+		},
+		{
+			name: "bad volume letter",
+			args: args{
+				volumeLetter:  "error",
+				volumeHandler: dummyHandler{},
+			},
+			wantErr:  true,
+			filePath: `test\testdata\dummyntfs`,
+		},
+		{
+			name: "bad vbr1",
+			args: args{
+				volumeLetter:  "C",
+				volumeHandler: dummyHandler{},
+			},
+			wantErr:  true,
+			filePath: `test\testdata\dummyntfs-badvbr1`,
+		},
+		{
+			name: "bad vbr2",
+			args: args{
+				volumeLetter:  "C",
+				volumeHandler: dummyHandler{},
+			},
+			wantErr:  true,
+			filePath: `test\testdata\dummyntfs-badvbr2`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVolume, err := GetVolumeHandler(tt.args.volumeLetter)
+			tt.args.volumeHandler.filePath = tt.filePath
+			gotVolume, err := GetVolumeHandler(tt.args.volumeLetter, tt.args.volumeHandler)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetVolumeHandler() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotVolume, tt.wantVolume) {
-				t.Errorf("GetVolumeHandler() gotVolume = %v, want %v", gotVolume, tt.wantVolume)
+			if !reflect.DeepEqual(gotVolume.Vbr, tt.wantVBR) {
+				t.Errorf("GetVolumeHandler() gotVBR = %+v, want %+v", gotVolume.Vbr, tt.wantVBR)
 			}
 		})
 	}
 }
 
-func Test_getHandle(t *testing.T) {
+type dummyHandler struct {
+	Handle               *os.File
+	VolumeLetter         string
+	Vbr                  vbr.VolumeBootRecord
+	mftReader            io.Reader
+	lastReadVolumeOffset int64
+	filePath             string
+}
+
+func (dummy dummyHandler) GetHandle(volumeLetter string) (handle *os.File, err error) {
+	if volumeLetter == "error" {
+		err = errors.New("faux error!")
+		return
+	}
+	handle, _ = os.Open(dummy.filePath)
+	return
+}
+
+func Test_GetHandle(t *testing.T) {
 	type args struct {
 		volumeLetter string
 	}
 	tests := []struct {
-		name       string
-		args       args
-		wantHandle *os.File
-		wantErr    bool
+		name    string
+		args    args
+		volume  VolumeHandler
+		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "no error",
+			args:    args{volumeLetter: "C"},
+			wantErr: false,
+		},
+		{
+			name:    "nil string input",
+			args:    args{volumeLetter: ""},
+			wantErr: true,
+		},
+		{
+			name:    "bad input",
+			args:    args{volumeLetter: "CD"},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotHandle, err := getHandle(tt.args.volumeLetter)
+			_, err := tt.volume.GetHandle(tt.args.volumeLetter)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getHandle() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if gotHandle != tt.wantHandle {
-				t.Errorf("getHandle() gotHandle = %v, want %v", gotHandle, tt.wantHandle)
 			}
 		})
 	}
@@ -68,7 +147,57 @@ func Test_identifyVolumesOfInterest(t *testing.T) {
 		wantVolumesOfInterest []string
 		wantErr               bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "systemdrive and d",
+			args: args{exportList: &ListOfFilesToExport{
+				0: FileToExport{
+					FullPath:        `%SYSTEMDRIVE%:\$MFT`,
+					IsFullPathRegex: false,
+					FileName:        "$MFT",
+					IsFileNameRegex: false,
+				},
+				1: FileToExport{
+					FullPath:        `D:\$MFT`,
+					IsFullPathRegex: false,
+					FileName:        "$MFT",
+					IsFileNameRegex: false,
+				},
+				2: FileToExport{
+					FullPath:        `D:\blah`,
+					IsFullPathRegex: false,
+					FileName:        "blah",
+					IsFileNameRegex: false,
+				},
+			}},
+			wantVolumesOfInterest: []string{"C", "d"},
+			wantErr:               false,
+		},
+		{
+			name: "not a real volume",
+			args: args{exportList: &ListOfFilesToExport{
+				0: FileToExport{
+					FullPath:        `1:\$MFT`,
+					IsFullPathRegex: false,
+					FileName:        "$MFT",
+					IsFileNameRegex: false,
+				},
+			}},
+			wantVolumesOfInterest: nil,
+			wantErr:               true,
+		},
+		{
+			name: "bad input",
+			args: args{exportList: &ListOfFilesToExport{
+				0: FileToExport{
+					FullPath:        `CD:\$MFT`,
+					IsFullPathRegex: false,
+					FileName:        "$MFT",
+					IsFileNameRegex: false,
+				},
+			}},
+			wantVolumesOfInterest: nil,
+			wantErr:               true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -94,7 +223,30 @@ func Test_isLetter(t *testing.T) {
 		wantResult bool
 		wantErr    bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:       "letter c",
+			args:       args{s: "C"},
+			wantResult: true,
+			wantErr:    false,
+		},
+		{
+			name:       "nil input",
+			args:       args{s: ""},
+			wantResult: false,
+			wantErr:    true,
+		},
+		{
+			name:       "string length of 2",
+			args:       args{s: "CC"},
+			wantResult: false,
+			wantErr:    true,
+		},
+		{
+			name:       "number input",
+			args:       args{s: "1"},
+			wantResult: false,
+			wantErr:    false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

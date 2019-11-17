@@ -138,7 +138,7 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 
 	// Resolve the possible matches that had attribute lists
 	if len(listOfMftRecordWithNonResidentAttributes) != 0 {
-		newVolumeHandle, _ := getHandle(volumeHandler.VolumeLetter)
+		newVolumeHandle, _ := volumeHandler.GetHandle(volumeHandler.VolumeLetter)
 		for _, record := range listOfMftRecordWithNonResidentAttributes {
 			attributeCounter := 0
 			sizeOfAttributeListAttributes := len(record.attributeListAttributes)
