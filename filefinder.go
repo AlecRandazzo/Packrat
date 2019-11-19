@@ -63,7 +63,6 @@ func checkForPossibleMatch(listOfSearchKeywords listOfSearchTerms, fileNameAttri
 					}
 				}
 			}
-			break
 		}
 	}
 
