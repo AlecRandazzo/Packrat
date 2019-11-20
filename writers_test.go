@@ -7,6 +7,13 @@ import (
 	"testing"
 )
 
+type dummyResultWriter struct{}
+
+func (dummy dummyResultWriter) ResultWriter(*chan fileReader, *sync.WaitGroup, *sync.WaitGroup) (err error) {
+
+	return
+}
+
 func TestZipResultWriter_ResultWriter(t *testing.T) {
 	type fields struct {
 		ZipWriter  *zip.Writer

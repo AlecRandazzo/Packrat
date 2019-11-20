@@ -125,7 +125,7 @@ func getFiles(volumeHandler *VolumeHandler, resultWriter ResultWriter, listOfSea
 		}
 	}
 
-	foundFiles, err := confirmFoundFiles(listOfSearchKeywords, possibleMatches, directoryTree)
+	foundFiles := confirmFoundFiles(listOfSearchKeywords, possibleMatches, directoryTree)
 	if err != nil {
 		err = fmt.Errorf("confirmFoundFiles() failed with error: %w", err)
 		return

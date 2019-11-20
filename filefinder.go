@@ -187,14 +187,14 @@ type foundFile struct {
 
 type foundFiles []foundFile
 
-func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) (foundFilesList foundFiles, err error) {
+func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) (foundFilesList foundFiles) {
 	log.Debug("Determining what possible matches are true matches.")
 	foundFilesList = make(foundFiles, 0)
 	for _, possibleMatch := range listOfPossibleMatches {
 		// First make sure that the parent directory is in the directory tree
 		if _, ok := directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber]; ok {
 			// check against all the list of possible full paths
-			possibleMatchFullPath := fmt.Sprintf("%s\\%s", strings.ToLower(directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber]), strings.ToLower(possibleMatch.fileNameAttribute.FileName))
+			possibleMatchFullPath := fmt.Sprintf(`%s\%s`, strings.ToLower(directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber]), strings.ToLower(possibleMatch.fileNameAttribute.FileName))
 			numberOfSearchTerms := len(listOfSearchKeywords)
 			counter := 0
 			for _, searchTerms := range listOfSearchKeywords {
