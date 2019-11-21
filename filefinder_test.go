@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2019 Alec Randazzo
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ */
+
 package windowscollector
 
 import (
@@ -33,11 +42,13 @@ func Test_checkForPossibleMatch(t *testing.T) {
 						FnModified:            time.Time{},
 						FnAccessed:            time.Time{},
 						FnChanged:             time.Time{},
+						FlagResident:          true,
 						ParentDirRecordNumber: 0,
 						LogicalFileSize:       0,
 						PhysicalFileSize:      0,
 						FileNameFlags:         mft.FileNameFlags{},
 						FileNamespace:         "",
+						FileNameLength:        16,
 						FileName:              "test",
 					},
 				},
