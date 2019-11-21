@@ -2,7 +2,7 @@ package windowscollector
 
 import (
 	"errors"
-	vbr "github.com/AlecRandazzo/GoFor-VBR-Parser"
+	vbr "github.com/Go-Forensics/VBR-Parser"
 	"io"
 	"os"
 	"reflect"

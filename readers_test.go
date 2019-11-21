@@ -1,7 +1,7 @@
 package windowscollector
 
 import (
-	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
+	mft "github.com/Go-Forensics/MFT-Parser"
 	"io"
 	"reflect"
 	"testing"

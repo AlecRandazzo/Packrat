@@ -12,7 +12,7 @@ package windowscollector
 import (
 	"errors"
 	"fmt"
-	vbr "github.com/AlecRandazzo/GoFor-VBR-Parser"
+	vbr "github.com/Go-Forensics/VBR-Parser"
 	log "github.com/sirupsen/logrus"
 	syscall "golang.org/x/sys/windows"
 	"io"

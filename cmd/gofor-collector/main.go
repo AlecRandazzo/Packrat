@@ -12,7 +12,7 @@ package main
 import (
 	"archive/zip"
 	"fmt"
-	collector "github.com/AlecRandazzo/GoFor-Windows-Collector"
+	collector "github.com/Go-Forensics/Windows-Collector"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	"os"
