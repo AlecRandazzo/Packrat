@@ -368,17 +368,61 @@ func Test_findPossibleMatches(t *testing.T) {
 				volumeHandler: &VolumeHandler{},
 				listOfSearchKeywords: listOfSearchTerms{
 					0: searchTerms{
-						fullPathString: `c:\$LogFile`,
+						fullPathString: `c:\$mftmirr`,
 						fullPathRegex:  nil,
-						fileNameString: "$LogFile",
+						fileNameString: "$mftmirr",
 						fileNameRegex:  nil,
 					},
 				},
 			},
-			dummyFile:                 `test\testdata\dummyntfs`,
-			wantErr:                   false,
-			wantDirectoryTree:         mft.DirectoryTree{},
-			wantListOfPossibleMatches: possibleMatches{},
+			dummyFile: `test\testdata\dummyntfs`,
+			wantErr:   false,
+			wantDirectoryTree: mft.DirectoryTree{
+				5:  `c:\`,
+				11: `c:\$Extend`,
+			},
+			wantListOfPossibleMatches: possibleMatches{
+				0: possibleMatch{
+					fileNameAttribute: mft.FileNameAttribute{
+						FnCreated:               time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
+						FnModified:              time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
+						FnAccessed:              time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
+						FnChanged:               time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
+						FlagResident:            true,
+						ParentDirRecordNumber:   5,
+						ParentDirSequenceNumber: 5,
+						LogicalFileSize:         4096,
+						PhysicalFileSize:        4096,
+						FileNameFlags: mft.FileNameFlags{
+							ReadOnly:          false,
+							Hidden:            true,
+							System:            true,
+							Archive:           false,
+							Device:            false,
+							Normal:            false,
+							Temporary:         false,
+							Sparse:            false,
+							Reparse:           false,
+							Compressed:        false,
+							Offline:           false,
+							NotContentIndexed: false,
+							Encrypted:         false,
+							Directory:         false,
+							IndexView:         false,
+						},
+						AttributeSize:  112,
+						FileNameLength: 16,
+						FileNamespace:  "WIN32 & DOS",
+						FileName:       "$MFTMirr",
+					},
+					dataRuns: mft.DataRuns{
+						0: mft.DataRun{
+							AbsoluteOffset: 8192,
+							Length:         4096,
+						},
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -397,13 +441,23 @@ func Test_findPossibleMatches(t *testing.T) {
 			if err != nil {
 				log.Panic(err)
 			}
+
+			mftRecord0, _ := parseMFTRecord0(tt.args.volumeHandler)
+			_, _ = tt.args.volumeHandler.Handle.Seek(tt.args.volumeHandler.Vbr.MftByteOffset, 0)
+
+			foundFile := foundFile{
+				dataRuns: mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns,
+				fullPath: "$mft",
+			}
+			tt.args.volumeHandler.mftReader = rawFileReader(tt.args.volumeHandler, foundFile)
+
 			gotListOfPossibleMatches, gotDirectoryTree, err := findPossibleMatches(tt.args.volumeHandler, tt.args.listOfSearchKeywords)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("findPossibleMatches() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotListOfPossibleMatches, tt.wantListOfPossibleMatches) {
-				t.Errorf("findPossibleMatches() gotListOfPossibleMatches = %v, want %v", gotListOfPossibleMatches, tt.wantListOfPossibleMatches)
+				t.Errorf("findPossibleMatches() gotListOfPossibleMatches = %+v, want %+v", gotListOfPossibleMatches, tt.wantListOfPossibleMatches)
 			}
 			if !reflect.DeepEqual(gotDirectoryTree, tt.wantDirectoryTree) {
 				t.Errorf("findPossibleMatches() gotDirectoryTree = %v, want %v", gotDirectoryTree, tt.wantDirectoryTree)
