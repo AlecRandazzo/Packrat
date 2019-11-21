@@ -17,6 +17,6 @@ jobs:
       - run: Expand-Archive go1.13.4.windows-amd64.zip
       - run: mv .\go1.13.4.windows-amd64\go C:\
       - run: go get -v -t -d ./...
-      - run: go test -v . -race -coverprofile=coverage.txt -covermode=atomic
+      - run: go test -v . -race -coverprofile=C:\coverage.txt -covermode=atomic
       - run: dotnet tool install --global Codecov.Tool
-      - run: codecov -f .\coverage.txt -t %CODECOV_TOKEN%
+      - run: codecov -f C:\coverage.txt -t %CODECOV_TOKEN%
