@@ -10,9 +10,8 @@
 package windowscollector
 
 import (
-	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
+	mft "github.com/Go-Forensics/MFT-Parser"
 	log "github.com/sirupsen/logrus"
-	syscall "golang.org/x/sys/windows"
 	"io"
 	"os"
 )
@@ -47,7 +46,7 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 		}
 		dataRunReader.dataRunTracker = 0
 		dataRunReader.dataRunBytesLeftToReadTracker = dataRunReader.DataRuns[dataRunReader.dataRunTracker].Length
-		dataRunReader.VolumeHandler.lastReadVolumeOffset, _ = syscall.Seek(dataRunReader.VolumeHandler.Handle, dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
+		dataRunReader.VolumeHandler.lastReadVolumeOffset, _ = dataRunReader.VolumeHandler.Handle.Seek(dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
 		dataRunReader.VolumeHandler.lastReadVolumeOffset -= bufferSize
 		dataRunReader.initialized = true
 
@@ -83,7 +82,7 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 	}
 	buffer := make([]byte, bufferSize)
 	dataRunReader.VolumeHandler.lastReadVolumeOffset += bufferSize
-	numberOfBytesRead, _ = syscall.Read(dataRunReader.VolumeHandler.Handle, buffer)
+	numberOfBytesRead, _ = dataRunReader.VolumeHandler.Handle.Read(buffer)
 	copy(byteSliceToPopulate, buffer)
 	dataRunReader.totalByesRead += bufferSize
 	if dataRunReader.totalFileSize == dataRunReader.totalByesRead {
@@ -100,7 +99,7 @@ func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 		dataRunReader.dataRunBytesLeftToReadTracker = dataRunReader.DataRuns[dataRunReader.dataRunTracker].Length
 
 		// Seek to the offset of the next datarun
-		dataRunReader.VolumeHandler.lastReadVolumeOffset, _ = syscall.Seek(dataRunReader.VolumeHandler.Handle, dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
+		dataRunReader.VolumeHandler.lastReadVolumeOffset, _ = dataRunReader.VolumeHandler.Handle.Seek(dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
 		dataRunReader.VolumeHandler.lastReadVolumeOffset -= bufferSize
 
 		log.Debugf("Reading data run number %d of %d for file '%s' which has a length of %d bytes at absolute offset %d",

@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2019 Alec Randazzo
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ */
+
 package windowscollector
 
 import "testing"
@@ -6,6 +15,7 @@ func TestCollect(t *testing.T) {
 	type args struct {
 		exportList   ListOfFilesToExport
 		resultWriter ResultWriter
+		handler      Handler
 	}
 	tests := []struct {
 		name    string
@@ -16,7 +26,7 @@ func TestCollect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Collect(tt.args.exportList, tt.args.resultWriter); (err != nil) != tt.wantErr {
+			if err := Collect(tt.args.handler, tt.args.exportList, tt.args.resultWriter); (err != nil) != tt.wantErr {
 				t.Errorf("Collect() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

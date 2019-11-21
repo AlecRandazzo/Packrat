@@ -12,9 +12,8 @@ package windowscollector
 import (
 	"errors"
 	"fmt"
-	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
+	mft "github.com/Go-Forensics/MFT-Parser"
 	log "github.com/sirupsen/logrus"
-	syscall "golang.org/x/sys/windows"
 	"io"
 	"strings"
 )
@@ -64,7 +63,6 @@ func checkForPossibleMatch(listOfSearchKeywords listOfSearchTerms, fileNameAttri
 					}
 				}
 			}
-			break
 		}
 	}
 
@@ -139,7 +137,7 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 
 	// Resolve the possible matches that had attribute lists
 	if len(listOfMftRecordWithNonResidentAttributes) != 0 {
-		newVolumeHandle, _ := getHandle(volumeHandler.VolumeLetter)
+		newVolumeHandle, _ := volumeHandler.GetHandle(volumeHandler.VolumeLetter)
 		for _, record := range listOfMftRecordWithNonResidentAttributes {
 			attributeCounter := 0
 			sizeOfAttributeListAttributes := len(record.attributeListAttributes)
@@ -149,9 +147,9 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 				case 0x80:
 					nonResidentRecordNumber := record.attributeListAttributes[attributeCounter].MFTReferenceRecordNumber
 					absoluteVolumeOffset := recordOffsetTracker[nonResidentRecordNumber]
-					_, _ = syscall.Seek(newVolumeHandle, absoluteVolumeOffset, 0)
+					_, _ = newVolumeHandle.Seek(absoluteVolumeOffset, 0)
 					buffer := mft.RawMasterFileTableRecord(make([]byte, volumeHandler.Vbr.BytesPerCluster))
-					_, _ = syscall.Read(newVolumeHandle, buffer)
+					_, _ = newVolumeHandle.Read(buffer)
 					mftRecord, _ := buffer.Parse(volumeHandler.Vbr.BytesPerCluster)
 					log.Debugf("Went to absolute offset %d to get a non resident data attribute with record number %d. Parsed the record for the values %+v. Raw hex: %x", absoluteVolumeOffset, nonResidentRecordNumber, mftRecord, buffer)
 					tempDataRunCounter := 0
@@ -189,14 +187,14 @@ type foundFile struct {
 
 type foundFiles []foundFile
 
-func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) (foundFilesList foundFiles, err error) {
+func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) (foundFilesList foundFiles) {
 	log.Debug("Determining what possible matches are true matches.")
 	foundFilesList = make(foundFiles, 0)
 	for _, possibleMatch := range listOfPossibleMatches {
 		// First make sure that the parent directory is in the directory tree
 		if _, ok := directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber]; ok {
 			// check against all the list of possible full paths
-			possibleMatchFullPath := fmt.Sprintf("%s\\%s", strings.ToLower(directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber]), strings.ToLower(possibleMatch.fileNameAttribute.FileName))
+			possibleMatchFullPath := fmt.Sprintf(`%s\%s`, strings.ToLower(directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber]), strings.ToLower(possibleMatch.fileNameAttribute.FileName))
 			numberOfSearchTerms := len(listOfSearchKeywords)
 			counter := 0
 			for _, searchTerms := range listOfSearchKeywords {

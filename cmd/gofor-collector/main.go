@@ -12,7 +12,7 @@ package main
 import (
 	"archive/zip"
 	"fmt"
-	collector "github.com/AlecRandazzo/GoFor-Windows-Collector"
+	collector "github.com/Go-Forensics/Windows-Collector"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -161,8 +161,8 @@ func main() {
 		ZipWriter:  zipWriter,
 		FileHandle: fileHandle,
 	}
-
-	err = collector.Collect(exportList, &resultWriter)
+	var volume collector.VolumeHandler
+	err = collector.Collect(volume, exportList, &resultWriter)
 	if err != nil {
 		log.Panic(err)
 	}

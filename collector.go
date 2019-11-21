@@ -11,14 +11,14 @@ package windowscollector
 
 import (
 	"fmt"
-	mft "github.com/AlecRandazzo/GoFor-MFT-Parser"
+	mft "github.com/Go-Forensics/MFT-Parser"
 	log "github.com/sirupsen/logrus"
-	syscall "golang.org/x/sys/windows"
 	"io"
 	"sync"
 )
 
-func Collect(exportList ListOfFilesToExport, resultWriter ResultWriter) (err error) {
+func Collect(injectedHandlerDependency Handler, exportList ListOfFilesToExport, resultWriter ResultWriter) (err error) {
+	// volumeHandler as an arg is a dependency injection
 	log.Debugf("Attempting to acquire the following files %+v", exportList)
 	volumesOfInterest, err := identifyVolumesOfInterest(&exportList)
 	if err != nil {
@@ -34,7 +34,7 @@ func Collect(exportList ListOfFilesToExport, resultWriter ResultWriter) (err err
 
 	for _, volumeLetter := range volumesOfInterest {
 		var volumeHandler VolumeHandler
-		volumeHandler, err = GetVolumeHandler(volumeLetter)
+		volumeHandler, err = GetVolumeHandler(volumeLetter, injectedHandlerDependency)
 		if err != nil {
 			err = fmt.Errorf("GetVolumeHandler() failed to get a handle to the volume %s: %w", volumeLetter, err)
 			return
@@ -68,7 +68,7 @@ func getFiles(volumeHandler *VolumeHandler, resultWriter ResultWriter, listOfSea
 	log.Debugf("Parsed the MFT's MFT record and got the following: %+v", mftRecord0)
 
 	// Go back to the beginning of the mft record
-	_, _ = syscall.Seek(volumeHandler.Handle, volumeHandler.Vbr.MftByteOffset, 0)
+	_, _ = volumeHandler.Handle.Seek(volumeHandler.Vbr.MftByteOffset, 0)
 	log.Debugf("Seeked back to the beginning offset to the MFT at offset %d", volumeHandler.Vbr.MftByteOffset)
 
 	// Open a raw reader on the MFT
@@ -125,7 +125,7 @@ func getFiles(volumeHandler *VolumeHandler, resultWriter ResultWriter, listOfSea
 		}
 	}
 
-	foundFiles, err := confirmFoundFiles(listOfSearchKeywords, possibleMatches, directoryTree)
+	foundFiles := confirmFoundFiles(listOfSearchKeywords, possibleMatches, directoryTree)
 	if err != nil {
 		err = fmt.Errorf("confirmFoundFiles() failed with error: %w", err)
 		return
