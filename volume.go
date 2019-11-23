@@ -46,7 +46,7 @@ func (volume VolumeHandler) GetHandle(volumeLetter string) (handle *os.File, err
 		err = fmt.Errorf("getHandle() failed to get handle to volume %s: %w", volumeLetter, err)
 		return
 	}
-	volume.Handle = os.NewFile(uintptr(syscallHandle), "")
+	handle = os.NewFile(uintptr(syscallHandle), "")
 	return
 }
 
