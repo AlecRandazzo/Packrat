@@ -20,7 +20,7 @@ import (
 )
 
 type ResultWriter interface {
-	ResultWriter(*chan fileReader, *sync.WaitGroup, *sync.WaitGroup) (err error)
+	ResultWriter(*chan fileReader, *sync.WaitGroup) (err error)
 }
 
 type ZipResultWriter struct {
@@ -33,7 +33,7 @@ type fileReader struct {
 	reader   io.Reader
 }
 
-func (zipResultWriter *ZipResultWriter) ResultWriter(fileReaders *chan fileReader, waitForInitialization *sync.WaitGroup, waitForFileCopying *sync.WaitGroup) (err error) {
+func (zipResultWriter *ZipResultWriter) ResultWriter(fileReaders *chan fileReader, waitForFileCopying *sync.WaitGroup) (err error) {
 	defer waitForFileCopying.Done()
 
 	openChannel := true

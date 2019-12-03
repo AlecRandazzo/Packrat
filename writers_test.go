@@ -47,7 +47,7 @@ func TestZipResultWriter_ResultWriter(t *testing.T) {
 				ZipWriter:  tt.fields.ZipWriter,
 				FileHandle: tt.fields.FileHandle,
 			}
-			if err := zipResultWriter.ResultWriter(tt.args.fileReaders, tt.args.waitForInitialization, tt.args.waitForFileCopying); (err != nil) != tt.wantErr {
+			if err := zipResultWriter.ResultWriter(tt.args.fileReaders, tt.args.waitForFileCopying); (err != nil) != tt.wantErr {
 				t.Errorf("ResultWriter() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

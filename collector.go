@@ -52,11 +52,10 @@ func Collect(injectedHandlerDependency Handler, exportList ListOfFilesToExport, 
 func getFiles(volumeHandler *VolumeHandler, resultWriter ResultWriter, listOfSearchKeywords listOfSearchTerms) (err error) {
 	// Init a few things
 	fileReaders := make(chan fileReader, 100)
-	waitForInitialization := sync.WaitGroup{}
 	waitForFileCopying := sync.WaitGroup{}
 	waitForFileCopying.Add(1)
 	go func() {
-		err = resultWriter.ResultWriter(&fileReaders, &waitForInitialization, &waitForFileCopying)
+		err = resultWriter.ResultWriter(&fileReaders, &waitForFileCopying)
 	}()
 
 	// parse the mft's mft record to get its dataruns
