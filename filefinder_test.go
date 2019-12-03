@@ -497,6 +497,7 @@ func Test_findPossibleMatches(t *testing.T) {
 			if err != nil {
 				log.Panic(err)
 			}
+			defer tt.args.volumeHandler.Handle.Close()
 
 			mftRecord0, _ := parseMFTRecord0(tt.args.volumeHandler)
 			_, _ = tt.args.volumeHandler.Handle.Seek(tt.args.volumeHandler.Vbr.MftByteOffset, 0)

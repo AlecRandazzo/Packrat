@@ -137,7 +137,6 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 			attributeCounter := 0
 			sizeOfAttributeListAttributes := len(record.attributeListAttributes)
 			dataRuns := make(mft.DataRuns)
-			fmt.Printf("%+v", record.attributeListAttributes)
 			for attributeCounter < sizeOfAttributeListAttributes {
 				switch record.attributeListAttributes[attributeCounter].Type {
 				case 0x80:
@@ -146,7 +145,6 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 					_, _ = newVolumeHandle.Seek(absoluteVolumeOffset, 0)
 					buffer := mft.RawMasterFileTableRecord(make([]byte, volumeHandler.Vbr.BytesPerCluster))
 					_, _ = newVolumeHandle.Read(buffer)
-					fmt.Printf("%x\n", buffer)
 					mftRecord, _ := buffer.Parse(volumeHandler.Vbr.BytesPerCluster)
 					log.Debugf("Went to absolute offset %d to get a non resident data attribute with record number %d. Parsed the record for the values %+v. Raw hex: %x", absoluteVolumeOffset, nonResidentRecordNumber, mftRecord, buffer)
 					tempDataRunCounter := 0
