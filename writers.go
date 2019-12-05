@@ -49,7 +49,10 @@ func (zipResultWriter *ZipResultWriter) ResultWriter(fileReaders *chan fileReade
 		var writer io.Writer
 		writer, err = zipResultWriter.ZipWriter.Create(normalizedFilePath)
 		if err != nil {
-			fmt.Println(err)
+			err = fmt.Errorf("ResultWriter failed to add a file to the output zip: %w", err)
+			zipResultWriter.ZipWriter.Close()
+			zipResultWriter.FileHandle.Close()
+			return
 		}
 		var readErr error
 		for {

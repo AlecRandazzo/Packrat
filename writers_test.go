@@ -11,44 +11,78 @@ package windowscollector
 
 import (
 	"archive/zip"
+	"bytes"
+	"crypto/md5"
+	"encoding/hex"
+	"io"
 	"os"
 	"sync"
 	"testing"
 )
 
-type dummyResultWriter struct{}
-
-func (dummy dummyResultWriter) ResultWriter(*chan fileReader, *sync.WaitGroup, *sync.WaitGroup) (err error) {
-
-	return
-}
-
 func TestZipResultWriter_ResultWriter(t *testing.T) {
-	type fields struct {
-		ZipWriter  *zip.Writer
-		FileHandle *os.File
-	}
 	type args struct {
-		fileReaders           *chan fileReader
-		waitForInitialization *sync.WaitGroup
-		waitForFileCopying    *sync.WaitGroup
+		fileReaders        *chan fileReader
+		waitForFileCopying *sync.WaitGroup
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name              string
+		args              args
+		wantErr           bool
+		dummyData         []byte
+		listOfFileReaders []fileReader
+		zipToCreate       string
+		wantZipHash       string
+		zipResultWriter   ZipResultWriter
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test1",
+			zipResultWriter: ZipResultWriter{
+				ZipWriter:  nil,
+				FileHandle: nil,
+			},
+			wantErr: false,
+			args: args{
+				fileReaders:        nil,
+				waitForFileCopying: &sync.WaitGroup{},
+			},
+			dummyData:         []byte{0x00, 0x00, 0x00},
+			listOfFileReaders: []fileReader{},
+			zipToCreate:       `test\testdata\test.zip`,
+			wantZipHash:       "84a75bc35ad74c12cf7225a0fe802f07",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			zipResultWriter := &ZipResultWriter{
-				ZipWriter:  tt.fields.ZipWriter,
-				FileHandle: tt.fields.FileHandle,
+			fileHandle, _ := os.Create(tt.zipToCreate)
+			zipWriter := zip.NewWriter(fileHandle)
+			tt.zipResultWriter.FileHandle = fileHandle
+			tt.zipResultWriter.ZipWriter = zipWriter
+			reader := bytes.NewReader(tt.dummyData)
+			tt.listOfFileReaders = make([]fileReader, 1)
+			tt.listOfFileReaders[0] = fileReader{
+				fullPath: "test",
+				reader:   reader,
 			}
-			if err := zipResultWriter.ResultWriter(tt.args.fileReaders, tt.args.waitForFileCopying); (err != nil) != tt.wantErr {
-				t.Errorf("ResultWriter() error = %v, wantErr %v", err, tt.wantErr)
+			tt.args.waitForFileCopying.Add(1)
+			channel := make(chan fileReader, 0)
+			tt.args.fileReaders = &channel
+			go tt.zipResultWriter.ResultWriter(tt.args.fileReaders, tt.args.waitForFileCopying)
+			for _, each := range tt.listOfFileReaders {
+				*tt.args.fileReaders <- each
+			}
+			close(*tt.args.fileReaders)
+			tt.args.waitForFileCopying.Wait()
+
+			// Get file hash
+			file, _ := os.Open(tt.zipToCreate)
+			defer file.Close()
+			hash := md5.New()
+			_, _ = io.Copy(hash, file)
+			hashInBytes := hash.Sum(nil)[:]
+			gotZipHash := hex.EncodeToString(hashInBytes)
+			if gotZipHash != tt.wantZipHash {
+				t.Errorf("ZipResultWriter.ResultWriter() gotZipHash = %v, want %v", gotZipHash, tt.wantZipHash)
 			}
 		})
 	}
