@@ -17,7 +17,8 @@ import (
 	"sync"
 )
 
-func Collect(injectedHandlerDependency Handler, exportList ListOfFilesToExport, resultWriter ResultWriter) (err error) {
+// Collect will find and collect target files into a format depending on the resultWriter type
+func Collect(injectedHandlerDependency handler, exportList ListOfFilesToExport, resultWriter resultWriter) (err error) {
 	// volumeHandler as an arg is a dependency injection
 	log.Debugf("Attempting to acquire the following files %+v", exportList)
 	volumesOfInterest, err := identifyVolumesOfInterest(&exportList)
@@ -49,7 +50,7 @@ func Collect(injectedHandlerDependency Handler, exportList ListOfFilesToExport, 
 	return
 }
 
-func getFiles(volumeHandler *VolumeHandler, resultWriter ResultWriter, listOfSearchKeywords listOfSearchTerms) (err error) {
+func getFiles(volumeHandler *VolumeHandler, resultWriter resultWriter, listOfSearchKeywords listOfSearchTerms) (err error) {
 	// Init a few things
 	fileReaders := make(chan fileReader, 100)
 	waitForFileCopying := sync.WaitGroup{}

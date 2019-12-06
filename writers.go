@@ -19,10 +19,11 @@ import (
 	"sync"
 )
 
-type ResultWriter interface {
+type resultWriter interface {
 	ResultWriter(*chan fileReader, *sync.WaitGroup) (err error)
 }
 
+// ZipResultWriter contains the handles to the file and zip structure
 type ZipResultWriter struct {
 	ZipWriter  *zip.Writer
 	FileHandle *os.File
@@ -33,6 +34,7 @@ type fileReader struct {
 	reader   io.Reader
 }
 
+// ResultWriter will export found files to a zip file.
 func (zipResultWriter *ZipResultWriter) ResultWriter(fileReaders *chan fileReader, waitForFileCopying *sync.WaitGroup) (err error) {
 	defer waitForFileCopying.Done()
 
@@ -49,7 +51,7 @@ func (zipResultWriter *ZipResultWriter) ResultWriter(fileReaders *chan fileReade
 		var writer io.Writer
 		writer, err = zipResultWriter.ZipWriter.Create(normalizedFilePath)
 		if err != nil {
-			err = fmt.Errorf("ResultWriter failed to add a file to the output zip: %w", err)
+			err = fmt.Errorf("resultWriter failed to add a file to the output zip: %w", err)
 			zipResultWriter.ZipWriter.Close()
 			zipResultWriter.FileHandle.Close()
 			return

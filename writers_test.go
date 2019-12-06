@@ -82,7 +82,7 @@ func TestZipResultWriter_ResultWriter(t *testing.T) {
 			hashInBytes := hash.Sum(nil)[:]
 			gotZipHash := hex.EncodeToString(hashInBytes)
 			if gotZipHash != tt.wantZipHash {
-				t.Errorf("ZipResultWriter.ResultWriter() gotZipHash = %v, want %v", gotZipHash, tt.wantZipHash)
+				t.Errorf("ZipResultWriter.resultWriter() gotZipHash = %v, want %v", gotZipHash, tt.wantZipHash)
 			}
 		})
 	}

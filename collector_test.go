@@ -24,7 +24,7 @@ func TestCollect(t *testing.T) {
 	type args struct {
 		exportList   ListOfFilesToExport
 		resultWriter ZipResultWriter
-		handler      Handler
+		handler      handler
 	}
 	tests := []struct {
 		name          string

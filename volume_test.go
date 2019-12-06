@@ -102,7 +102,7 @@ type dummyHandler struct {
 
 func (dummy dummyHandler) GetHandle(volumeLetter string) (handle *os.File, err error) {
 	if volumeLetter == "error" {
-		err = errors.New("faux error!")
+		err = errors.New("faux error")
 		return
 	}
 	handle, _ = os.Open(dummy.filePath)

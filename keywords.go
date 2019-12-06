@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-// File that you want to export.
+// FileToExport is the file that you want to export.
 type FileToExport struct {
 	FullPath        string
 	IsFullPathRegex bool
@@ -24,7 +24,7 @@ type FileToExport struct {
 	IsFileNameRegex bool
 }
 
-// Slice of files that you want to export.
+// ListOfFilesToExport is a slice of files that you want to export.
 type ListOfFilesToExport []FileToExport
 
 type searchTerms struct {

@@ -16,6 +16,7 @@ import (
 	"os"
 )
 
+// DataRunsReader contains all the information needed to support the data runs reader function
 type DataRunsReader struct {
 	VolumeHandler                 *VolumeHandler
 	DataRuns                      mft.DataRuns

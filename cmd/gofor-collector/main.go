@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-type Options struct {
+type options struct {
 	Debug string `short:"d" long:"debug" default:"" description:"Log debug information to output file."`
 	//SendTo             string   `short:"s" long:"sendto" required:"true" description:"Where to send collected files to." choice:"zip"`
 	ZipName            string `short:"z" long:"zipname" description:"Output file name for the zip." required:"true"`
@@ -33,7 +33,7 @@ func init() {
 }
 
 func main() {
-	opts := new(Options)
+	opts := new(options)
 	parsedOpts := flags.NewParser(opts, flags.Default)
 	_, err := parsedOpts.Parse()
 	if err != nil {
