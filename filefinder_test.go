@@ -12,7 +12,7 @@ package windowscollector
 import (
 	mft "github.com/Go-Forensics/MFT-Parser"
 	vbr "github.com/Go-Forensics/VBR-Parser"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"reflect"
 	"regexp"
 	"testing"
