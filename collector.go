@@ -55,9 +55,7 @@ func getFiles(volumeHandler *VolumeHandler, resultWriter resultWriter, listOfSea
 	fileReaders := make(chan fileReader, 100)
 	waitForFileCopying := sync.WaitGroup{}
 	waitForFileCopying.Add(1)
-	go func() {
-		err = resultWriter.ResultWriter(&fileReaders, &waitForFileCopying)
-	}()
+	go resultWriter.ResultWriter(fileReaders, &waitForFileCopying)
 
 	// parse the mft's mft record to get its dataruns
 	mftRecord0, err := parseMFTRecord0(volumeHandler)

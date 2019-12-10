@@ -20,7 +20,7 @@ import (
 )
 
 type resultWriter interface {
-	ResultWriter(*chan fileReader, *sync.WaitGroup) (err error)
+	ResultWriter(chan fileReader, *sync.WaitGroup) (err error)
 }
 
 // ZipResultWriter contains the handles to the file and zip structure
@@ -35,14 +35,14 @@ type fileReader struct {
 }
 
 // ResultWriter will export found files to a zip file.
-func (zipResultWriter *ZipResultWriter) ResultWriter(fileReaders *chan fileReader, waitForFileCopying *sync.WaitGroup) (err error) {
+func (zipResultWriter *ZipResultWriter) ResultWriter(fileReaders chan fileReader, waitForFileCopying *sync.WaitGroup) (err error) {
 	defer waitForFileCopying.Done()
 
 	openChannel := true
 	for openChannel == true {
 		writtenCounter := 0
 		fileReader := fileReader{}
-		fileReader, openChannel = <-*fileReaders
+		fileReader, openChannel = <-fileReaders
 		if openChannel == false {
 			break
 		}

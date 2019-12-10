@@ -22,7 +22,7 @@ import (
 
 func TestZipResultWriter_ResultWriter(t *testing.T) {
 	type args struct {
-		fileReaders        *chan fileReader
+		fileReaders        chan fileReader
 		waitForFileCopying *sync.WaitGroup
 	}
 	tests := []struct {
@@ -66,12 +66,12 @@ func TestZipResultWriter_ResultWriter(t *testing.T) {
 			}
 			tt.args.waitForFileCopying.Add(1)
 			channel := make(chan fileReader, 0)
-			tt.args.fileReaders = &channel
+			tt.args.fileReaders = channel
 			go tt.zipResultWriter.ResultWriter(tt.args.fileReaders, tt.args.waitForFileCopying)
 			for _, each := range tt.listOfFileReaders {
-				*tt.args.fileReaders <- each
+				tt.args.fileReaders <- each
 			}
-			close(*tt.args.fileReaders)
+			close(tt.args.fileReaders)
 			tt.args.waitForFileCopying.Wait()
 
 			// Get file hash
