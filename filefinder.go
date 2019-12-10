@@ -82,14 +82,9 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 	for err != io.EOF {
 		buffer := mft.RawMasterFileTableRecord(make([]byte, volumeHandler.Vbr.MftRecordSize))
 		_, err = volumeHandler.mftReader.Read(buffer)
-		if err != nil {
-			if err == io.EOF {
-				err = nil
-				break
-			} else {
-				err = fmt.Errorf("findPossibleMatches() failed to read the mft: %w", err)
-				return
-			}
+		if err == io.EOF {
+			err = nil
+			break
 		}
 
 		result, _ := buffer.IsThisAnMftRecord()

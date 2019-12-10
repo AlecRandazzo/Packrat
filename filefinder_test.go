@@ -12,7 +12,7 @@ package windowscollector
 import (
 	mft "github.com/Go-Forensics/MFT-Parser"
 	vbr "github.com/Go-Forensics/VBR-Parser"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"reflect"
 	"regexp"
 	"testing"
@@ -384,6 +384,12 @@ func Test_findPossibleMatches(t *testing.T) {
 						fileNameString: "$mftmirr",
 						fileNameRegex:  nil,
 					},
+					1: searchTerms{
+						fullPathString: `c:\software`,
+						fullPathRegex:  nil,
+						fileNameString: "software",
+						fileNameRegex:  nil,
+					},
 				},
 			},
 			dummyFile: `test\testdata\dummyntfs`,
@@ -433,6 +439,45 @@ func Test_findPossibleMatches(t *testing.T) {
 						},
 					},
 				},
+				1: possibleMatch{
+					fileNameAttribute: mft.FileNameAttribute{
+						FnCreated:    time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
+						FnModified:   time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
+						FnAccessed:   time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
+						FnChanged:    time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
+						FlagResident: true,
+						NameLength: mft.NameLength{
+							FlagNamed: false,
+							NamedSize: 0,
+						},
+						AttributeSize:           112,
+						ParentDirRecordNumber:   506651,
+						ParentDirSequenceNumber: 27,
+						LogicalFileSize:         0,
+						PhysicalFileSize:        0,
+						FileNameFlags: mft.FileNameFlags{
+							ReadOnly:          false,
+							Hidden:            false,
+							System:            false,
+							Archive:           true,
+							Device:            false,
+							Normal:            false,
+							Temporary:         false,
+							Sparse:            false,
+							Reparse:           false,
+							Compressed:        false,
+							Offline:           false,
+							NotContentIndexed: false,
+							Encrypted:         false,
+							Directory:         false,
+							IndexView:         false,
+						},
+						FileNameLength: 16,
+						FileNamespace:  "POSIX",
+						FileName:       "SOFTWARE",
+					},
+					dataRuns: mft.DataRuns{},
+				},
 			},
 		},
 	}
@@ -452,6 +497,7 @@ func Test_findPossibleMatches(t *testing.T) {
 			if err != nil {
 				log.Panic(err)
 			}
+			defer tt.args.volumeHandler.Handle.Close()
 
 			mftRecord0, _ := parseMFTRecord0(tt.args.volumeHandler)
 			_, _ = tt.args.volumeHandler.Handle.Seek(tt.args.volumeHandler.Vbr.MftByteOffset, 0)

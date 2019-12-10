@@ -22,10 +22,11 @@ import (
 	"unicode"
 )
 
-type Handler interface {
+type handler interface {
 	GetHandle(volumeLetter string) (handle *os.File, err error)
 }
 
+// VolumeHandler contains everything needed for basic collection functionality
 type VolumeHandler struct {
 	Handle               *os.File
 	VolumeLetter         string
@@ -34,6 +35,7 @@ type VolumeHandler struct {
 	lastReadVolumeOffset int64
 }
 
+// GetHandle will get a file handle to the underlying NTFS volume. We need this in order to bypass file locks.
 func (volume VolumeHandler) GetHandle(volumeLetter string) (handle *os.File, err error) {
 	dwDesiredAccess := uint32(0x80000000) //0x80 FILE_READ_ATTRIBUTES
 	dwShareMode := uint32(0x02 | 0x01)
@@ -51,7 +53,7 @@ func (volume VolumeHandler) GetHandle(volumeLetter string) (handle *os.File, err
 }
 
 // GetVolumeHandler gets a file handle to the specified volume and parses its volume boot record.
-func GetVolumeHandler(volumeLetter string, handler Handler) (volume VolumeHandler, err error) {
+func GetVolumeHandler(volumeLetter string, handler handler) (volume VolumeHandler, err error) {
 	const volumeBootRecordSize = 512
 	volume.VolumeLetter = volumeLetter
 	volume.Handle, err = handler.GetHandle(volumeLetter)
