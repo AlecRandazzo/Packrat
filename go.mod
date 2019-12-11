@@ -1,6 +1,6 @@
 module github.com/Go-Forensics/Windows-Collector
 
-go 1.13.4
+go 1.13.5
 
 require (
 	github.com/Go-Forensics/MFT-Parser v0.6.3
