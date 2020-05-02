@@ -18,7 +18,5 @@ jobs:
       - run: mv .\go1.14.2.windows-amd64\go C:\
       - run: go get -v -t -d ./...
       - run: go test -v . -race -coverprofile=C:\coverage.txt -covermode=atomic
-      - run: (New-Object System.Net.WebClient).DownloadFile("https://dotnet.microsoft.com/download/dotnet-core/scripts/v1/dotnet-install.ps1", "dotnet-install.ps1")
-      - run: ./dotnet-install.ps1
-      - run: dotnet tool install --global Codecov.Tool
-      - run: codecov -f C:\coverage.txt -t %CODECOV_TOKEN%
+      - run: (New-Object System.Net.WebClient).DownloadFile("https://github.com/codecov/codecov-exe/releases/download/1.10.0/codecov-windows-x64.exe", "codecov.exe")
+      - run: codecov.exe -f C:\coverage.txt -t %CODECOV_TOKEN%
