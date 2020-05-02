@@ -13,9 +13,9 @@ jobs:
       - checkout
       - run: $ProgressPreference = "SilentlyContinue"
       - run: rm -r C:\Go
-      - run: (New-Object System.Net.WebClient).DownloadFile("https://dl.google.com/go/go1.13.5.windows-amd64.zip", "go1.13.5.windows-amd64.zip")
-      - run: Expand-Archive go1.13.5.windows-amd64.zip
-      - run: mv .\go1.13.5.windows-amd64\go C:\
+      - run: (New-Object System.Net.WebClient).DownloadFile("https://dl.google.com/go/go1.14.2.windows-amd64.zip", "go1.14.2.windows-amd64.zip")
+      - run: Expand-Archive go1.14.2.windows-amd64.zip
+      - run: mv .\go1.14.2.windows-amd64\go C:\
       - run: go get -v -t -d ./...
       - run: go test -v . -race -coverprofile=C:\coverage.txt -covermode=atomic
       - run: dotnet tool install --global Codecov.Tool
