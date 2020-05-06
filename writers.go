@@ -31,45 +31,35 @@ type fileReader struct {
 func (zipResultWriter *ZipResultWriter) ResultWriter(fileReaders chan fileReader, waitForFileCopying *sync.WaitGroup) (err error) {
 	defer waitForFileCopying.Done()
 
+	// We receive io.Readers from the fileReaders channel. These are files that the collector identified as ones to collect.
 	openChannel := true
 	for openChannel == true {
-		writtenCounter := 0
 		fileReader := fileReader{}
 		fileReader, openChannel = <-fileReaders
 		if openChannel == false {
 			break
 		}
+
+		// Normalize the file path so we can make the path a valid file name
 		normalizedFilePath := strings.ReplaceAll(fileReader.fullPath, "\\", "_")
 		normalizedFilePath = strings.ReplaceAll(normalizedFilePath, ":", "_")
+
+		// Create a new file inside the zip file
 		var writer io.Writer
 		writer, err = zipResultWriter.ZipWriter.Create(normalizedFilePath)
 		if err != nil {
 			err = fmt.Errorf("resultWriter failed to add a file to the output zip: %w", err)
-			zipResultWriter.ZipWriter.Close()
-			zipResultWriter.FileHandle.Close()
 			return
 		}
-		var readErr error
-		for {
-			buffer := make([]byte, 1024)
-			_, readErr = fileReader.reader.Read(buffer)
-			if readErr != nil {
-				break
-			}
-			bytesWritten, writeErr := writer.Write(buffer)
-			if writeErr != nil {
-				log.Panic(writeErr)
-			}
-			writtenCounter += bytesWritten
-		}
+
+		// Copy contents from the file we want to collect to the output file in the zip
+		_, readErr := io.Copy(writer, fileReader.reader)
 		if readErr == io.EOF {
 			log.Debugf("Successfully collected '%s'", fileReader.fullPath)
 		} else {
 			log.Debugf("Failed to collect '%s' due to %v", fileReader.fullPath, readErr)
 		}
 	}
-	zipResultWriter.ZipWriter.Close()
-	zipResultWriter.FileHandle.Close()
 	err = nil
 	return
 }

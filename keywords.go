@@ -11,10 +11,10 @@ import (
 
 // FileToExport is the file that you want to export.
 type FileToExport struct {
-	FullPath        string
-	IsFullPathRegex bool
-	FileName        string
-	IsFileNameRegex bool
+	FullPath        string `yaml:"FullPath"`
+	IsFullPathRegex bool   `yaml:"IsFullPathRegex"`
+	FileName        string `yaml:"FileName"`
+	IsFileNameRegex bool   `yaml:"IsFileNameRegex"`
 }
 
 // ListOfFilesToExport is a slice of files that you want to export.
