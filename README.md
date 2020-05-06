@@ -1,28 +1,39 @@
 [![CircleCI](https://circleci.com/gh/Go-Forensics/Windows-Collector.svg?style=svg)](https://circleci.com/gh/Go-Forensics/Windows-Collector) [![codecov](https://codecov.io/gh/Go-Forensics/Windows-Collector/branch/master/graph/badge.svg)](https://codecov.io/gh/Go-Forensics/Windows-Collector) [![Go Report Card](https://goreportcard.com/badge/github.com/Go-Forensics/Windows-Collector)](https://goreportcard.com/report/github.com/Go-Forensics/Windows-Collector) [![GoDoc](https://godoc.org/github.com/Go-Forensics/GoFor/pkg/gofor?status.png)](https://godoc.org/github.com/Go-Forensics/Windows-Collector) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/Go-Forensics/Windows-Collector/issues)
 
 # GoFor Collector
-GoFor (Go Forensics) Collector is geared towards augmenting EDR toolsets. Unfortunately, not all EDR toolsets has the capability of collecting forensically relevant files from endpoints. The GoFor Collector looks to remedy that.
+GoFor (Go Forensics) Collector is geared towards augmenting EDR toolsets. Unfortunately, not all EDR toolsets have the capability of collecting forensically relevant files from endpoints. The GoFor Collector looks to remedy that.
 
 ## Usage
 
-### GoFor Collector
+```usage: gofor-collector.exe [<flags>]
+   
+Flags:
+  --help                         Show context-sensitive help (also try
+                                 --help-long and --help-man).
+  --debug                        Enable debug mode.
+  --all                          Collect all forensic artifacts.
+  --mft                          Collect the system drive MFT.
+  --mft-all                      Collect all attached volume MFTs.
+  --mft-letters=MFT-LETTERS ...  Collect all attached volume MFTs.
+  --reg                          Collect all registry hives, both system and
+                                 user hives.
+  --events                       Collect all event logs.
+  --browser                      Collect browser history
+  --custom-config=CUSTOM-CONFIG  Custom configuration file that will overwrite
+                                 built in config.
+  --throttle                     This setting will limit the process to a single
+                                 thread. This will reduce the CPU load.
+  --output=OUTPUT                Specify the name of the output file. If not
+                                 specified, the file name defaults to the host
+                                 name and a timestamp.
+```
 
-To collect all forensic files:
-```gofor-collector.exe /z whatever.zip /g a```
+### Examples
 
-To collect just event logs:
-```gofor-collector.exe /z whatever.zip /g e```
+Collect all the things: `gofor-collector.exe --all`
 
-To collect $MFT and registry hives: ```gofor-collector.exe /z whatever.zip /g mr```
+Collect just the system drive MFT and export to a custom name zip file: `gofor-collector.exe --mft --output out.zip`
 
-For `/g` concatenate the abbreviation characters together for what you want. The order doesn't matter. Valid values are `a` for all (defaults to this if you don't use `/g`), `m` for $MFT, `r` for system registries, `u` for user registries, `e` for event logs.
+Collect event logs and registry hives: `gofor-collector.exe --events --reg`
 
-## Currently Available Features
-- GoFor Collector: Windows command line collector that can acquire the files listed below and write them to a zip file.
-  - OS Drive $MFT
-  - All user NTUSER.DAT and USRCLASS.DAT
-  - SYSTEM and SOFTWARE registry hives
-  - All Windows event EVTX files
-
-## Future Plans
-- Add support to the GoFor collector for uploading to GCP and AWS.
+Use a custom configuration for collection (see example config in `config/config.yml`): `gofor-collector.exe --custom-config config.yml`

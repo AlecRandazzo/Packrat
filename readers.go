@@ -9,8 +9,8 @@ import (
 	"os"
 )
 
-// DataRunsReader contains all the information needed to support the data runs reader function
-type DataRunsReader struct {
+// dataRunsReader contains all the information needed to support the data runs reader function
+type dataRunsReader struct {
 	VolumeHandler                 *VolumeHandler
 	DataRuns                      mft.DataRuns
 	fileName                      string
@@ -21,7 +21,7 @@ type DataRunsReader struct {
 	initialized                   bool
 }
 
-func (dataRunReader *DataRunsReader) Read(byteSliceToPopulate []byte) (numberOfBytesRead int, err error) {
+func (dataRunReader *dataRunsReader) Read(byteSliceToPopulate []byte) (numberOfBytesRead int, err error) {
 	bufferSize := int64(len(byteSliceToPopulate))
 
 	// Sanity checking
@@ -114,7 +114,7 @@ func apiFileReader(file foundFile) (reader io.Reader, err error) {
 }
 
 func rawFileReader(handler *VolumeHandler, file foundFile) (reader io.Reader) {
-	reader = &DataRunsReader{
+	reader = &dataRunsReader{
 		VolumeHandler:                 handler,
 		DataRuns:                      file.dataRuns,
 		fileName:                      file.fullPath,

@@ -81,7 +81,7 @@ func TestDataRunsReader_Read(t *testing.T) {
 			}
 			handler, _ := GetVolumeHandler("c", tt.dummy)
 			defer handler.Handle.Close()
-			dataRunReader := &DataRunsReader{
+			dataRunReader := &dataRunsReader{
 				VolumeHandler:                 &handler,
 				DataRuns:                      tt.fields.DataRuns,
 				fileName:                      tt.fields.fileName,

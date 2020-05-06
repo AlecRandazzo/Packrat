@@ -61,13 +61,16 @@ func TestCollect(t *testing.T) {
 				FileHandle: fileHandle,
 			}
 			_ = Collect(tt.args.handler, tt.args.exportList, &tt.args.resultWriter)
+			zipWriter.Close()
+			fileHandle.Close()
+
 			// Get file hash
 			file, _ := os.Open(tt.zipTestOutput)
-			defer file.Close()
 			hash := md5.New()
 			_, _ = io.Copy(hash, file)
 			hashInBytes := hash.Sum(nil)[:]
 			gotZipHash := hex.EncodeToString(hashInBytes)
+			file.Close()
 			if gotZipHash != tt.wantZipHash {
 				t.Errorf("collect() gotZipHash = %v, want %v", gotZipHash, tt.wantZipHash)
 			}
@@ -112,7 +115,7 @@ func Test_getFiles(t *testing.T) {
 			dummyFile:   `test\testdata\dummyntfs`,
 			testZip:     `test\testdata\getFilesTest1.zip`,
 			wantErr:     false,
-			wantZipHash: "e37081c5c97884bd419cfadaa281f77a",
+			wantZipHash: "a50b885249c709ae97eeba0e2d6ec78d",
 		},
 		{
 			name: "test2",
@@ -131,7 +134,7 @@ func Test_getFiles(t *testing.T) {
 			dummyFile:   `test\testdata\dummyntfs`,
 			testZip:     `test\testdata\getFilesTest2.zip`,
 			wantErr:     false,
-			wantZipHash: "04c3f56fb7388624c0119eee3c97cae2",
+			wantZipHash: "75c57f05d2879cb723dbec6e2e1e8f83",
 		},
 	}
 	for _, tt := range tests {
@@ -158,14 +161,16 @@ func Test_getFiles(t *testing.T) {
 			defer tt.args.volumeHandler.Handle.Close()
 
 			_ = getFiles(tt.args.volumeHandler, &tt.args.resultWriter, tt.args.listOfSearchKeywords)
+			zipWriter.Close()
+			fileHandle.Close()
 
 			// Get file hash
 			file, _ := os.Open(tt.testZip)
-			defer file.Close()
 			hash := md5.New()
 			_, _ = io.Copy(hash, file)
 			hashInBytes := hash.Sum(nil)[:]
 			gotZipHash := hex.EncodeToString(hashInBytes)
+			file.Close()
 			if gotZipHash != tt.wantZipHash {
 				t.Errorf("getFiles() gotZipHash = %v, want %v", gotZipHash, tt.wantZipHash)
 			}

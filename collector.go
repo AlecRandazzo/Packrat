@@ -30,8 +30,7 @@ func Collect(injectedHandlerDependency handler, exportList ListOfFilesToExport, 
 		var volumeHandler VolumeHandler
 		volumeHandler, err = GetVolumeHandler(volumeLetter, injectedHandlerDependency)
 		if err != nil {
-			err = fmt.Errorf("GetVolumeHandler() failed to get a handle to the volume %s: %w", volumeLetter, err)
-			return
+			continue
 		}
 
 		err = getFiles(&volumeHandler, resultWriter, searchTerms)
