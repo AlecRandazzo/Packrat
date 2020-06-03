@@ -1,3 +1,11 @@
+github.com/AlecRandazzo/BinaryTransforms v1.3.5 h1:Nbx54afOidnnYmth92R7YJtfZLc7vuXh1IVEAlmms1I=
+github.com/AlecRandazzo/BinaryTransforms v1.3.5/go.mod h1:a+Gn6CWbYTn1I7ZTr1xI0HoW9cvYBshuS7t7vvCEhF0=
+github.com/AlecRandazzo/MFT-Parser v0.6.6 h1:ACeIDEEBm73Ei7Ojqi+FCt30jS2G83qV2W37dFPN8Dg=
+github.com/AlecRandazzo/MFT-Parser v0.6.6/go.mod h1:KBupbr1fcNpUu563/UHE75eWR40v4me1jDqW0/8DRIc=
+github.com/AlecRandazzo/Timestamp-Parser v1.4.3 h1:RC42wi1506BrA2QHh+OeGBIvKufCZDurhlKzOmig00A=
+github.com/AlecRandazzo/Timestamp-Parser v1.4.3/go.mod h1:ZXLMmRQYV7MhuEIeB9leqr60N47Pq7lAp0CBtYUY/UY=
+github.com/AlecRandazzo/VBR-Parser v1.1.3 h1:ivvcd2pbFoiB+mj0UTYCOTeyM44m8+jZQKSAXsnZ1Hc=
+github.com/AlecRandazzo/VBR-Parser v1.1.3/go.mod h1:Q1rS1PyUIPx0PZm2En2EHu3h49W8jQdm3EATb3RkkAI=
 github.com/Go-Forensics/BinaryTransforms v1.3.3 h1:W5ya4DS4hhjGE2DnrL7H5GpYu3pTCN8zwRI45Ltnklo=
 github.com/Go-Forensics/BinaryTransforms v1.3.3/go.mod h1:5WYD8lkQ4ISk9RSdHsB0pVl9RlAvw3NJQquWrLu2QV0=
 github.com/Go-Forensics/MFT-Parser v0.6.5 h1:xQIO4bB8YP1T+39+xPIQhBKPRWMlJNo88NoDcEaXhOY=

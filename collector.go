@@ -4,7 +4,7 @@ package windowscollector
 
 import (
 	"fmt"
-	mft "github.com/Go-Forensics/MFT-Parser"
+	mft "github.com/AlecRandazzo/MFT-Parser"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"sync"
