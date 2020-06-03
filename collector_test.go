@@ -6,7 +6,7 @@ import (
 	"archive/zip"
 	"crypto/md5"
 	"encoding/hex"
-	vbr "github.com/Go-Forensics/VBR-Parser"
+	vbr "github.com/AlecRandazzo/VBR-Parser"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"

@@ -2,7 +2,7 @@
 GOCMD=go
 GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
-BINARY_NAME=gofor-collector.exe
+BINARY_NAME=forensic-collector.exe
 
 default: build
 all: test build

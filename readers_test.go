@@ -3,8 +3,8 @@
 package windowscollector
 
 import (
-	mft "github.com/Go-Forensics/MFT-Parser"
-	vbr "github.com/Go-Forensics/VBR-Parser"
+	mft "github.com/AlecRandazzo/MFT-Parser"
+	vbr "github.com/AlecRandazzo/VBR-Parser"
 	log "github.com/sirupsen/logrus"
 	"reflect"
 	"testing"

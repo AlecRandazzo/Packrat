@@ -1,10 +1,10 @@
-module github.com/Go-Forensics/Windows-Collector
+module github.com/AlecRandazzo/Windows-Collector
 
 go 1.14
 
 require (
-	github.com/Go-Forensics/MFT-Parser v0.6.5
-	github.com/Go-Forensics/VBR-Parser v1.1.2
+	github.com/AlecRandazzo/MFT-Parser v0.6.6
+	github.com/AlecRandazzo/VBR-Parser v1.1.3
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect

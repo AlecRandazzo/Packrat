@@ -5,7 +5,7 @@ package windowscollector
 import (
 	"errors"
 	"fmt"
-	vbr "github.com/Go-Forensics/VBR-Parser"
+	vbr "github.com/AlecRandazzo/VBR-Parser"
 	log "github.com/sirupsen/logrus"
 	syscall "golang.org/x/sys/windows"
 	"io"
