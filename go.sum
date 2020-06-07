@@ -8,12 +8,6 @@ github.com/AlecRandazzo/VBR-Parser v1.1.3 h1:ivvcd2pbFoiB+mj0UTYCOTeyM44m8+jZQKS
 github.com/AlecRandazzo/VBR-Parser v1.1.3/go.mod h1:Q1rS1PyUIPx0PZm2En2EHu3h49W8jQdm3EATb3RkkAI=
 github.com/Go-Forensics/BinaryTransforms v1.3.3 h1:W5ya4DS4hhjGE2DnrL7H5GpYu3pTCN8zwRI45Ltnklo=
 github.com/Go-Forensics/BinaryTransforms v1.3.3/go.mod h1:5WYD8lkQ4ISk9RSdHsB0pVl9RlAvw3NJQquWrLu2QV0=
-github.com/Go-Forensics/MFT-Parser v0.6.5 h1:xQIO4bB8YP1T+39+xPIQhBKPRWMlJNo88NoDcEaXhOY=
-github.com/Go-Forensics/MFT-Parser v0.6.5/go.mod h1:kJwsPMqntAnmUONGl/jcgzuFx5jVEnHeBLvH/8JUbi0=
-github.com/Go-Forensics/Timestamp-Parser v1.4.2 h1:EfuxxB3bf6i7DZJMKera6QBjR6NZC/38jrmxgWtyi1A=
-github.com/Go-Forensics/Timestamp-Parser v1.4.2/go.mod h1:KYNfZlIY7lIlDRkcNZxQ8LOMLp92ooPJ4Kql+DBLnjg=
-github.com/Go-Forensics/VBR-Parser v1.1.2 h1:vGMwsKKSEW9GHRF560K+zwvTTeikxPj9hEBEXdQkPm4=
-github.com/Go-Forensics/VBR-Parser v1.1.2/go.mod h1:yiew61AmrDoa0w6U0BFVnryMf3Gcr+8rYd8B2btkDMo=
 github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d h1:G0m3OIz70MZUWq3EgK3CesDbo8upS2Vm9/P3FtgI+Jk=
 github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 h1:JYp7IbQjafoB+tBA3gMyHYHrpOtNuDiK/uB5uXxq5wM=

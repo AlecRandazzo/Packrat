@@ -12,7 +12,7 @@ package main
 import (
 	"archive/zip"
 	"fmt"
-	collector "github.com/AlecRandazzo/Windows-Collector"
+	collector "github.com/AlecRandazzo/Packrat"
 	"github.com/shirou/gopsutil/disk"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
