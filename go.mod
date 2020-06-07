@@ -1,4 +1,4 @@
-module github.com/AlecRandazzo/Windows-Collector
+module github.com/AlecRandazzo/Packrat
 
 go 1.14
 

@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package windowscollector
+package packrat
 
 import (
 	"archive/zip"
