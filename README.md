@@ -1,7 +1,7 @@
 [![CircleCI](https://circleci.com/gh/AlecRandazzo/Windows-Collector.svg?style=svg)](https://circleci.com/gh/AlecRandazzo/Windows-Collector) [![codecov](https://codecov.io/gh/AlecRandazzo/Windows-Collector/branch/master/graph/badge.svg)](https://codecov.io/gh/AlecRandazzo/Windows-Collector) [![Go Report Card](https://goreportcard.com/badge/github.com/AlecRandazzo/Windows-Collector)](https://goreportcard.com/report/github.com/AlecRandazzo/Windows-Collector) [![GoDoc](https://godoc.org/github.com/AlecRandazzo/GoFor/pkg/gofor?status.png)](https://godoc.org/github.com/AlecRandazzo/Windows-Collector) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AlecRandazzo/Windows-Collector/issues)
 
-# Forensic Collector
-The Forensic Collector is geared towards augmenting EDR toolsets. Unfortunately, not all EDR toolsets have the capability of collecting forensically relevant files from endpoints. The GoFor Collector looks to remedy that.
+# Packrat
+Packrat is a forensic collector geared towards augmenting EDR toolsets. Unfortunately, not all EDR toolsets have the capability of collecting forensically relevant files from endpoints. The GoFor Collector looks to remedy that.
 
 ## Usage
 
