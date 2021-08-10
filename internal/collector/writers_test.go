@@ -70,7 +70,6 @@ func TestZipResultWriter_ResultWriter(t *testing.T) {
 
 			// Get file hash
 			file, _ := os.Open(tt.zipToCreate)
-			defer file.Close()
 			hash := md5.New()
 			_, _ = io.Copy(hash, file)
 			hashInBytes := hash.Sum(nil)[:]
@@ -78,6 +77,10 @@ func TestZipResultWriter_ResultWriter(t *testing.T) {
 			if gotZipHash != tt.wantZipHash {
 				t.Errorf("ZipResultWriter.resultWriter() gotZipHash = %v, want %v", gotZipHash, tt.wantZipHash)
 			}
+
+			// Cleanup
+			file.Close()
+			_ = os.Remove(tt.zipToCreate)
 		})
 	}
 }

@@ -75,6 +75,9 @@ func TestCollect(t *testing.T) {
 			if gotZipHash != tt.wantZipHash {
 				t.Errorf("collect() gotZipHash = %v, want %v", gotZipHash, tt.wantZipHash)
 			}
+
+			// Cleanup
+			_ = os.Remove(tt.zipTestOutput)
 		})
 	}
 }
@@ -176,6 +179,9 @@ func Test_getFiles(t *testing.T) {
 			if gotZipHash != tt.wantZipHash {
 				t.Errorf("getFiles() gotZipHash = %v, want %v", gotZipHash, tt.wantZipHash)
 			}
+
+			// Cleanup
+			_ = os.Remove(tt.testZip)
 		})
 	}
 }
