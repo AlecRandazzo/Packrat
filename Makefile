@@ -1,12 +1,6 @@
-# Go parameters
-GOCMD=go
-GOBUILD=$(GOCMD) build
-GOTEST=$(GOCMD) test
-BINARY_NAME=forensic-collector.exe
+windows:
+		go build -ldflags="-s -w" -o packrat.exe -v ./cmd/windows/main.go
 
-default: build
-all: test build
-build:
-		$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/main.go
+.PHONY:test
 test:
-		$(GOTEST) -race -v .
+		go test -race -v ./...
