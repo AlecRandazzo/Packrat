@@ -1,10 +1,10 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package sanitychecks
+package sanitycheck
 
 import "testing"
 
-func TestSanityCheckByteSlice(t *testing.T) {
+func Test_Bytes(t *testing.T) {
 	type args struct {
 		input        []byte
 		expectedSize int
@@ -38,8 +38,8 @@ func TestSanityCheckByteSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := SanityCheckByteSlice(tt.args.input, tt.args.expectedSize); (err != nil) != tt.wantErr {
-				t.Errorf("SanityCheckByteSlice() error = %v, wantErr %v", err, tt.wantErr)
+			if err := Bytes(tt.args.input, tt.args.expectedSize); (err != nil) != tt.wantErr {
+				t.Errorf("Bytes() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

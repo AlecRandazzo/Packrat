@@ -1,14 +1,14 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package sanitychecks
+package sanitycheck
 
 import (
 	"errors"
 	"fmt"
 )
 
-// SanityCheckByteSlice will verify that the byte slice is not empty and check for the expected size. Disable size checking by setting expectedSize to 0.
-func SanityCheckByteSlice(input []byte, expectedSize int) error {
+// Bytes will verify that the byte slice is not empty and check for the expected size. Disable size checking by setting expectedSize to 0.
+func Bytes(input []byte, expectedSize int) error {
 	size := len(input)
 	if size == 0 {
 		return errors.New("nil byte slice")

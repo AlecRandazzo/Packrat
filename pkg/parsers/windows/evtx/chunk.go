@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/byteshelper"
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/sanitychecks"
+	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/sanitycheck"
 )
 
 // These are effectively constants
@@ -40,7 +40,7 @@ type chunk struct {
 
 func (chunk chunk) parse(inBytes []byte) error {
 	// Sanity checking
-	err := sanitychecks.SanityCheckByteSlice(inBytes, 512)
+	err := sanitycheck.Bytes(inBytes, 512)
 	if err != nil {
 		return fmt.Errorf("chunk should be 512 inBytes in size, received %d: %w", len(inBytes), err)
 	}

@@ -3,6 +3,7 @@
 package collector
 
 import (
+	"github.com/google/go-cmp/cmp"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -15,13 +16,12 @@ import (
 
 func Test_checkForPossibleMatch(t *testing.T) {
 	type args struct {
-		listOfSearchKeywords listOfSearchTerms
+		listOfSearchKeywords searchTermsList
 		fileNameAttributes   mft.FileNameAttributes
 	}
 	tests := []struct {
 		name                  string
 		args                  args
-		wantResult            bool
 		wantFileNameAttribute mft.FileNameAttribute
 		wantErr               bool
 	}{
@@ -32,10 +32,10 @@ func Test_checkForPossibleMatch(t *testing.T) {
 				listOfSearchKeywords: nil,
 				fileNameAttributes: mft.FileNameAttributes{
 					0: mft.FileNameAttribute{
-						FnCreated:             time.Time{},
-						FnModified:            time.Time{},
-						FnAccessed:            time.Time{},
-						FnChanged:             time.Time{},
+						Created:               time.Time{},
+						Modified:              time.Time{},
+						Accessed:              time.Time{},
+						Changed:               time.Time{},
 						FlagResident:          true,
 						ParentDirRecordNumber: 0,
 						LogicalFileSize:       0,
@@ -52,7 +52,7 @@ func Test_checkForPossibleMatch(t *testing.T) {
 			name:    "null fn attribute",
 			wantErr: true,
 			args: args{
-				listOfSearchKeywords: listOfSearchTerms{
+				listOfSearchKeywords: searchTermsList{
 					0: searchTerms{
 						fullPathString: `c:\test`,
 						fullPathRegex:  nil,
@@ -67,7 +67,7 @@ func Test_checkForPossibleMatch(t *testing.T) {
 			name:    "file name exact match",
 			wantErr: false,
 			args: args{
-				listOfSearchKeywords: listOfSearchTerms{
+				listOfSearchKeywords: searchTermsList{
 					0: searchTerms{
 						fullPathString: `c:\test`,
 						fullPathRegex:  nil,
@@ -77,10 +77,10 @@ func Test_checkForPossibleMatch(t *testing.T) {
 				},
 				fileNameAttributes: mft.FileNameAttributes{
 					0: mft.FileNameAttribute{
-						FnCreated:             time.Time{},
-						FnModified:            time.Time{},
-						FnAccessed:            time.Time{},
-						FnChanged:             time.Time{},
+						Created:               time.Time{},
+						Modified:              time.Time{},
+						Accessed:              time.Time{},
+						Changed:               time.Time{},
 						ParentDirRecordNumber: 0,
 						LogicalFileSize:       0,
 						PhysicalFileSize:      0,
@@ -89,10 +89,10 @@ func Test_checkForPossibleMatch(t *testing.T) {
 						FileName:              "nope",
 					},
 					1: mft.FileNameAttribute{
-						FnCreated:             time.Time{},
-						FnModified:            time.Time{},
-						FnAccessed:            time.Time{},
-						FnChanged:             time.Time{},
+						Created:               time.Time{},
+						Modified:              time.Time{},
+						Accessed:              time.Time{},
+						Changed:               time.Time{},
 						ParentDirRecordNumber: 0,
 						LogicalFileSize:       0,
 						PhysicalFileSize:      0,
@@ -102,12 +102,11 @@ func Test_checkForPossibleMatch(t *testing.T) {
 					},
 				},
 			},
-			wantResult: true,
 			wantFileNameAttribute: mft.FileNameAttribute{
-				FnCreated:             time.Time{},
-				FnModified:            time.Time{},
-				FnAccessed:            time.Time{},
-				FnChanged:             time.Time{},
+				Created:               time.Time{},
+				Modified:              time.Time{},
+				Accessed:              time.Time{},
+				Changed:               time.Time{},
 				ParentDirRecordNumber: 0,
 				LogicalFileSize:       0,
 				PhysicalFileSize:      0,
@@ -120,7 +119,7 @@ func Test_checkForPossibleMatch(t *testing.T) {
 			name:    "file name regex match",
 			wantErr: false,
 			args: args{
-				listOfSearchKeywords: listOfSearchTerms{
+				listOfSearchKeywords: searchTermsList{
 					0: searchTerms{
 						fullPathString: `c:\test`,
 						fullPathRegex:  nil,
@@ -130,10 +129,10 @@ func Test_checkForPossibleMatch(t *testing.T) {
 				},
 				fileNameAttributes: mft.FileNameAttributes{
 					0: mft.FileNameAttribute{
-						FnCreated:             time.Time{},
-						FnModified:            time.Time{},
-						FnAccessed:            time.Time{},
-						FnChanged:             time.Time{},
+						Created:               time.Time{},
+						Modified:              time.Time{},
+						Accessed:              time.Time{},
+						Changed:               time.Time{},
 						ParentDirRecordNumber: 0,
 						LogicalFileSize:       0,
 						PhysicalFileSize:      0,
@@ -142,10 +141,10 @@ func Test_checkForPossibleMatch(t *testing.T) {
 						FileName:              "nope",
 					},
 					1: mft.FileNameAttribute{
-						FnCreated:             time.Time{},
-						FnModified:            time.Time{},
-						FnAccessed:            time.Time{},
-						FnChanged:             time.Time{},
+						Created:               time.Time{},
+						Modified:              time.Time{},
+						Accessed:              time.Time{},
+						Changed:               time.Time{},
 						ParentDirRecordNumber: 0,
 						LogicalFileSize:       0,
 						PhysicalFileSize:      0,
@@ -155,12 +154,11 @@ func Test_checkForPossibleMatch(t *testing.T) {
 					},
 				},
 			},
-			wantResult: true,
 			wantFileNameAttribute: mft.FileNameAttribute{
-				FnCreated:             time.Time{},
-				FnModified:            time.Time{},
-				FnAccessed:            time.Time{},
-				FnChanged:             time.Time{},
+				Created:               time.Time{},
+				Modified:              time.Time{},
+				Accessed:              time.Time{},
+				Changed:               time.Time{},
 				ParentDirRecordNumber: 0,
 				LogicalFileSize:       0,
 				PhysicalFileSize:      0,
@@ -171,9 +169,9 @@ func Test_checkForPossibleMatch(t *testing.T) {
 		},
 		{
 			name:    "file name no match",
-			wantErr: false,
+			wantErr: true,
 			args: args{
-				listOfSearchKeywords: listOfSearchTerms{
+				listOfSearchKeywords: searchTermsList{
 					0: searchTerms{
 						fullPathString: `c:\test`,
 						fullPathRegex:  nil,
@@ -183,10 +181,10 @@ func Test_checkForPossibleMatch(t *testing.T) {
 				},
 				fileNameAttributes: mft.FileNameAttributes{
 					0: mft.FileNameAttribute{
-						FnCreated:             time.Time{},
-						FnModified:            time.Time{},
-						FnAccessed:            time.Time{},
-						FnChanged:             time.Time{},
+						Created:               time.Time{},
+						Modified:              time.Time{},
+						Accessed:              time.Time{},
+						Changed:               time.Time{},
 						ParentDirRecordNumber: 0,
 						LogicalFileSize:       0,
 						PhysicalFileSize:      0,
@@ -195,10 +193,10 @@ func Test_checkForPossibleMatch(t *testing.T) {
 						FileName:              "nope",
 					},
 					1: mft.FileNameAttribute{
-						FnCreated:             time.Time{},
-						FnModified:            time.Time{},
-						FnAccessed:            time.Time{},
-						FnChanged:             time.Time{},
+						Created:               time.Time{},
+						Modified:              time.Time{},
+						Accessed:              time.Time{},
+						Changed:               time.Time{},
 						ParentDirRecordNumber: 0,
 						LogicalFileSize:       0,
 						PhysicalFileSize:      0,
@@ -208,19 +206,15 @@ func Test_checkForPossibleMatch(t *testing.T) {
 					},
 				},
 			},
-			wantResult:            false,
 			wantFileNameAttribute: mft.FileNameAttribute{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotResult, gotFileNameAttribute, err := checkForPossibleMatch(tt.args.listOfSearchKeywords, tt.args.fileNameAttributes)
+			gotFileNameAttribute, err := checkForPossibleMatch(tt.args.listOfSearchKeywords, tt.args.fileNameAttributes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("checkForPossibleMatch() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if gotResult != tt.wantResult {
-				t.Errorf("checkForPossibleMatch() gotResult = %v, want %v", gotResult, tt.wantResult)
 			}
 			if !reflect.DeepEqual(gotFileNameAttribute, tt.wantFileNameAttribute) {
 				t.Errorf("checkForPossibleMatch() gotFileNameAttribute = %v, want %v", gotFileNameAttribute, tt.wantFileNameAttribute)
@@ -231,7 +225,7 @@ func Test_checkForPossibleMatch(t *testing.T) {
 
 func Test_confirmFoundFiles(t *testing.T) {
 	type args struct {
-		listOfSearchKeywords  listOfSearchTerms
+		listOfSearchKeywords  searchTermsList
 		listOfPossibleMatches possibleMatches
 		directoryTree         mft.DirectoryTree
 	}
@@ -255,7 +249,7 @@ func Test_confirmFoundFiles(t *testing.T) {
 				},
 			},
 			args: args{
-				listOfSearchKeywords: listOfSearchTerms{
+				listOfSearchKeywords: searchTermsList{
 					0: searchTerms{
 						fullPathString: `c:\exactmatch`,
 						fullPathRegex:  nil,
@@ -278,10 +272,10 @@ func Test_confirmFoundFiles(t *testing.T) {
 				listOfPossibleMatches: possibleMatches{
 					0: possibleMatch{
 						fileNameAttribute: mft.FileNameAttribute{
-							FnCreated:             time.Time{},
-							FnModified:            time.Time{},
-							FnAccessed:            time.Time{},
-							FnChanged:             time.Time{},
+							Created:               time.Time{},
+							Modified:              time.Time{},
+							Accessed:              time.Time{},
+							Changed:               time.Time{},
 							ParentDirRecordNumber: 5,
 							LogicalFileSize:       0,
 							PhysicalFileSize:      0,
@@ -293,10 +287,10 @@ func Test_confirmFoundFiles(t *testing.T) {
 					},
 					1: possibleMatch{
 						fileNameAttribute: mft.FileNameAttribute{
-							FnCreated:             time.Time{},
-							FnModified:            time.Time{},
-							FnAccessed:            time.Time{},
-							FnChanged:             time.Time{},
+							Created:               time.Time{},
+							Modified:              time.Time{},
+							Accessed:              time.Time{},
+							Changed:               time.Time{},
 							ParentDirRecordNumber: 5,
 							LogicalFileSize:       0,
 							PhysicalFileSize:      0,
@@ -308,10 +302,10 @@ func Test_confirmFoundFiles(t *testing.T) {
 					},
 					2: possibleMatch{
 						fileNameAttribute: mft.FileNameAttribute{
-							FnCreated:             time.Time{},
-							FnModified:            time.Time{},
-							FnAccessed:            time.Time{},
-							FnChanged:             time.Time{},
+							Created:               time.Time{},
+							Modified:              time.Time{},
+							Accessed:              time.Time{},
+							Changed:               time.Time{},
 							ParentDirRecordNumber: 7,
 							LogicalFileSize:       0,
 							PhysicalFileSize:      0,
@@ -323,10 +317,10 @@ func Test_confirmFoundFiles(t *testing.T) {
 					},
 					3: possibleMatch{
 						fileNameAttribute: mft.FileNameAttribute{
-							FnCreated:             time.Time{},
-							FnModified:            time.Time{},
-							FnAccessed:            time.Time{},
-							FnChanged:             time.Time{},
+							Created:               time.Time{},
+							Modified:              time.Time{},
+							Accessed:              time.Time{},
+							Changed:               time.Time{},
 							ParentDirRecordNumber: 6,
 							LogicalFileSize:       0,
 							PhysicalFileSize:      0,
@@ -356,8 +350,8 @@ func Test_confirmFoundFiles(t *testing.T) {
 
 func Test_findPossibleMatches(t *testing.T) {
 	type args struct {
-		volumeHandler        *VolumeHandler
-		listOfSearchKeywords listOfSearchTerms
+		dummyHandler         *dummyHandler
+		listOfSearchKeywords searchTermsList
 	}
 	tests := []struct {
 		name                      string
@@ -370,8 +364,15 @@ func Test_findPossibleMatches(t *testing.T) {
 		{
 			name: "find possible matches",
 			args: args{
-				volumeHandler: &VolumeHandler{},
-				listOfSearchKeywords: listOfSearchTerms{
+				dummyHandler: &dummyHandler{
+					handle:       nil,
+					volumeLetter: "c",
+					vbr:          vbr.VolumeBootRecord{},
+					reader:       nil,
+					lastOffset:   0,
+					filePath:     filepath.FromSlash("../../test/testdata/dummyntfs"),
+				},
+				listOfSearchKeywords: searchTermsList{
 					0: searchTerms{
 						fullPathString: `c:\$mftmirr`,
 						fullPathRegex:  nil,
@@ -386,19 +387,18 @@ func Test_findPossibleMatches(t *testing.T) {
 					},
 				},
 			},
-			dummyFile: filepath.FromSlash("../../test/testdata/dummyntfs"),
-			wantErr:   false,
+			wantErr: false,
 			wantDirectoryTree: mft.DirectoryTree{
-				5:  `c:\`,
+				5:  `c:`,
 				11: `c:\$Extend`,
 			},
 			wantListOfPossibleMatches: possibleMatches{
 				0: possibleMatch{
 					fileNameAttribute: mft.FileNameAttribute{
-						FnCreated:               time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
-						FnModified:              time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
-						FnAccessed:              time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
-						FnChanged:               time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
+						Created:                 time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
+						Modified:                time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
+						Accessed:                time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
+						Changed:                 time.Date(2018, 2, 25, 00, 10, 45, 642455000, time.UTC),
 						FlagResident:            true,
 						ParentDirRecordNumber:   5,
 						ParentDirSequenceNumber: 5,
@@ -435,10 +435,10 @@ func Test_findPossibleMatches(t *testing.T) {
 				},
 				1: possibleMatch{
 					fileNameAttribute: mft.FileNameAttribute{
-						FnCreated:    time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
-						FnModified:   time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
-						FnAccessed:   time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
-						FnChanged:    time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
+						Created:      time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
+						Modified:     time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
+						Accessed:     time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
+						Changed:      time.Date(2019, 8, 21, 6, 43, 46, 194743600, time.UTC),
 						FlagResident: true,
 						NameLength: mft.NameLength{
 							FlagNamed: false,
@@ -470,46 +470,36 @@ func Test_findPossibleMatches(t *testing.T) {
 						FileNamespace:  "POSIX",
 						FileName:       "SOFTWARE",
 					},
-					dataRuns: mft.DataRuns{},
+					dataRuns: nil,
 				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handle := dummyHandler{
-				Handle:               nil,
-				VolumeLetter:         "",
-				Vbr:                  vbr.VolumeBootRecord{},
-				mftReader:            nil,
-				lastReadVolumeOffset: 0,
-				filePath:             tt.dummyFile,
-			}
-
-			var err error
-			*tt.args.volumeHandler, err = GetVolumeHandler("c", handle)
+			err := tt.args.dummyHandler.GetHandle()
 			if err != nil {
-				t.Error("failed to get volume handle")
-				return
+				t.Errorf("could not open dummyHandler file %s: %v", tt.args.dummyHandler.filePath, err)
 			}
-			defer tt.args.volumeHandler.Handle.Close()
+			defer tt.args.dummyHandler.Handle().Close()
 
-			mftRecord0, _ := parseMFTRecord0(tt.args.volumeHandler)
-			_, _ = tt.args.volumeHandler.Handle.Seek(tt.args.volumeHandler.Vbr.MftByteOffset, 0)
+			mftRecord0, _ := parseMFTRecord0(tt.args.dummyHandler)
+			_, _ = tt.args.dummyHandler.handle.Seek(tt.args.dummyHandler.vbr.MftByteOffset, 0)
 
 			foundFile := foundFile{
 				dataRuns: mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns,
 				fullPath: "$mft",
 			}
-			tt.args.volumeHandler.mftReader = rawFileReader(tt.args.volumeHandler, foundFile)
-
-			gotListOfPossibleMatches, gotDirectoryTree, err := findPossibleMatches(tt.args.volumeHandler, tt.args.listOfSearchKeywords)
+			tt.args.dummyHandler.UpdateReader(rawFileReader(tt.args.dummyHandler, foundFile))
+			var gotListOfPossibleMatches possibleMatches
+			var gotDirectoryTree mft.DirectoryTree
+			gotListOfPossibleMatches, gotDirectoryTree, err = findPossibleMatches(tt.args.dummyHandler, tt.args.listOfSearchKeywords)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("findPossibleMatches() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotListOfPossibleMatches, tt.wantListOfPossibleMatches) {
-				t.Errorf("findPossibleMatches() gotListOfPossibleMatches = %+v, want %+v", gotListOfPossibleMatches, tt.wantListOfPossibleMatches)
+				t.Errorf(cmp.Diff(gotListOfPossibleMatches, tt.wantListOfPossibleMatches, cmp.AllowUnexported(possibleMatch{})))
 			}
 			if !reflect.DeepEqual(gotDirectoryTree, tt.wantDirectoryTree) {
 				t.Errorf("findPossibleMatches() gotDirectoryTree = %v, want %v", gotDirectoryTree, tt.wantDirectoryTree)

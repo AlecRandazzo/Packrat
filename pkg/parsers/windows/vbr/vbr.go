@@ -3,12 +3,12 @@
 package vbr
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"math"
-
 	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/byteshelper"
+	"math"
 )
 
 // VolumeBootRecord contains relevant data about an NTFS volume
@@ -22,60 +22,60 @@ type VolumeBootRecord struct {
 	ClustersPerIndexRecord int64
 }
 
-// RawVolumeBootRecord is a []byte alias containing bytes of a raw volume boot record. Used as a receiver for Parse().
-type RawVolumeBootRecord []byte
+var (
+	magicNumber                  = []byte("NTFS")
+	magicNumberLocation          = byteshelper.NewDataLocation(0x03, 0x04)
+	bytesPerSectorLocation       = byteshelper.NewDataLocation(0x0B, 0x02)
+	sectorsPerClusterLocation    = byteshelper.NewDataLocation(0x0D, 0x01)
+	clustersPerMftRecordLocation = byteshelper.NewDataLocation(0x40, 0x01)
+	clustersPerOffsetLocation    = byteshelper.NewDataLocation(0x30, 0x08)
+	clustersPerIndexRecord       = byteshelper.NewDataLocation(0x44, 0x01)
+)
 
 // Parse parses a byte slice containing an NTFS volume boot record (VBR)
-func (rawVolumeBootRecord RawVolumeBootRecord) Parse() (vbr VolumeBootRecord, err error) {
+func Parse(input []byte) (vbr VolumeBootRecord, err error) {
 	// Sanity check that we have the right data
-	sizeOfRawVolumeBootRecord := len(rawVolumeBootRecord)
-	if sizeOfRawVolumeBootRecord == 0 {
-		err = errors.New("RawVolumeBootRecord.Parse() received nil bytes")
-		return
-	} else if sizeOfRawVolumeBootRecord < 512 {
-		err = errors.New("RawVolumeBootRecord.Parse() received less than 512 bytes")
-		return
+	vbrSize := len(input)
+	if vbrSize == 0 {
+		return VolumeBootRecord{}, errors.New("received nil bytes")
+	} else if vbrSize < 512 {
+		return VolumeBootRecord{}, errors.New("received less than 512 bytes")
 	}
 
-	const codeNTFSMagicNumber = "NTFS"
-	const offsetNTFSMagicNumber = 0x03
-	const lengthNTFSMagicNumber = 0x04
-	const offsetBytesPerSector = 0x0b
-	const lengthBytesPerSector = 0x02
-	const offsetSectorsPerCluster = 0x0d
-	const offsetClustersPerMFTRecord = 0x40
-	const offsetMftClusterOffset = 0x30
-	const lengthMftClusterOffset = 0x08
-	const offsetClustersPerIndexRecord = 0x44
+	var buffer []byte
 
 	// Sanity check to verify that the function actually received a VBR. Bomb if we didn't.
-	valueNTFSMagicNumber := string(rawVolumeBootRecord[offsetNTFSMagicNumber : offsetNTFSMagicNumber+lengthNTFSMagicNumber])
-	if valueNTFSMagicNumber != codeNTFSMagicNumber {
-		err = errors.New("RawVolumeBootRecord.Parse() received byte slice that does not start with 'NTFS' magic number")
-		return
+	buffer, err = byteshelper.GetValue(input, magicNumberLocation)
+	if bytes.Compare(magicNumber, buffer) != 0 {
+		return VolumeBootRecord{}, errors.New("received byte slice that does not start with 'NTFS' magic number")
 	}
 
-	// Start pulling out data based on pre-defined offsets in the VBR
-	valueBytesPerSector := rawVolumeBootRecord[offsetBytesPerSector : offsetBytesPerSector+lengthBytesPerSector]
-	vbr.BytesPerSector = int64(binary.LittleEndian.Uint16(valueBytesPerSector))
-	vbr.SectorsPerCluster = int64(rawVolumeBootRecord[offsetSectorsPerCluster])
-	clustersPerMFTRecord := int(rawVolumeBootRecord[offsetClustersPerMFTRecord])
+	// Pull out data based on pre-defined offsets in the VBR
+	buffer, err = byteshelper.GetValue(input, bytesPerSectorLocation)
+	vbr.BytesPerSector = int64(binary.LittleEndian.Uint16(buffer))
+
+	buffer, err = byteshelper.GetValue(input, sectorsPerClusterLocation)
+	vbr.SectorsPerCluster = int64(buffer[0])
+
+	buffer, err = byteshelper.GetValue(input, clustersPerMftRecordLocation)
+	clustersPerMFTRecord := int(buffer[0])
 	if clustersPerMFTRecord < 128 {
-		err = fmt.Errorf("RawVolumeBootRecord.Parse() found the clusters per MFT record is %d, which is less than 128", clustersPerMFTRecord)
-		vbr = VolumeBootRecord{}
-		return
+		return VolumeBootRecord{}, fmt.Errorf("found the clusters per MFT record is %d, which is less than 128", clustersPerMFTRecord)
 	}
-	signedTwosComplement := int8(rawVolumeBootRecord[0x40]) * -1
+	signedTwosComplement := int8(buffer[0]) * -1
 	vbr.MftRecordSize = int64(math.Pow(2, float64(signedTwosComplement)))
 	vbr.BytesPerCluster = vbr.SectorsPerCluster * vbr.BytesPerSector
-	valueMftClusterOffset := rawVolumeBootRecord[offsetMftClusterOffset : offsetMftClusterOffset+lengthMftClusterOffset]
-	mftClusterOffset, err := byteshelper.LittleEndianBinaryToInt64(valueMftClusterOffset)
+
+	buffer, err = byteshelper.GetValue(input, clustersPerOffsetLocation)
+	var mftClusterOffset int64
+	mftClusterOffset, err = byteshelper.LittleEndianBinaryToInt64(buffer)
 	if mftClusterOffset == 0 {
-		err = fmt.Errorf("RawVolumeBootRecord.Parse() failed to get mft offset clusters: %w", err)
-		vbr = VolumeBootRecord{}
-		return
+		return VolumeBootRecord{}, fmt.Errorf("failed to get mft offset clusters: %w", err)
 	}
 	vbr.MftByteOffset = mftClusterOffset * vbr.BytesPerCluster
-	vbr.ClustersPerIndexRecord = int64(rawVolumeBootRecord[offsetClustersPerIndexRecord])
-	return
+
+	buffer, err = byteshelper.GetValue(input, clustersPerIndexRecord)
+	vbr.ClustersPerIndexRecord = int64(buffer[0])
+
+	return vbr, nil
 }

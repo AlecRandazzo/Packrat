@@ -8,193 +8,192 @@ import (
 	"fmt"
 )
 
-// []byte alias containing bytes of a raw MFT record attribute.
-type rawAttribute []byte
+// These constants are the "magic number" aka first byte for each type of attribute.
+const (
+	magicNumberStandardInformation = 0x10
+	magicNumberAttributeList       = 0x20
+	magicNumberFileName            = 0x30
+	magicNumberVolumeVersion       = 0x40
+	magicNumberSecurityDescriptor  = 0x50
+	magicNumberVolumeName          = 0x60
+	magicNumberVolumeInformation   = 0x70
+	magicNumberData                = 0x80
+	magicNumberIndexRoot           = 0x90
+	magicNumberIndexAllocation     = 0xA0
+	magicNumberBitmap              = 0xB0
+	magicNumberSymbolicLink        = 0xC0
+	magicNumberReparsePoint        = 0xD0
+	magicNumberEaInformation       = 0xE0
+	magicNumberPropertySet         = 0xF0
+)
 
-// RawAttributes contains a slice of rawAttribute []byte aliases. Used primarily as a method receiver for the parse() method.
-// See here for a handy list of attributes: https://flatcap.org/linux-ntfs/ntfs/attributes/index.html
-type RawAttributes []rawAttribute
-
-// Parse parses a slice of raw attributes and returns its filename, standard information, and dat attributes. It takes an argument for bytes per cluster (typically 4096) which is used for computing data run information in a data attributes.
-func (rawAttributes RawAttributes) Parse(bytesPerCluster int64) (fileNameAttributes FileNameAttributes, standardInformationAttribute StandardInformationAttribute, dataAttribute DataAttribute, attributeListAttributes AttributeListAttributes, err error) {
-	// Sanity check to make sure that the method received valid data
-	sizeOfRawAttributesSlice := len(rawAttributes)
-	if sizeOfRawAttributesSlice == 0 {
-		err = errors.New("nil sized rawAttributes slice")
-		return
-	} else if bytesPerCluster == 0 {
-		err = errors.New("received bytesPerCluster value of 0")
-		return
-	}
-
-	// These constants are the "magic number" aka first byte for each type of attribute.
-	const codeStandardInformation = 0x10
-	const codeattributeList = 0x20
-	const codeFileName = 0x30
-	const codeData = 0x80
-
-	// Determine what each raw attribute is and parse it accordingly.
-	for _, rawAttribute := range rawAttributes {
-
-		// Sanity check to make sure the attribute actually has bytes in it.
-		sizeOfRawAttribute := len(rawAttribute)
-		if sizeOfRawAttribute == 0 {
-			err = errors.New("came across a rawAttribute with a nil size")
-			fileNameAttributes = nil
-			standardInformationAttribute = StandardInformationAttribute{}
-			dataAttribute = DataAttribute{}
-			return
-		}
-
-		// Check the first byte to see if it is one of the "magic number" bytes we care about. If it is, we parse those raw attributes accordingly.
-		switch rawAttribute[0x00] {
-		case codeFileName:
-			rawFileNameAttribute := RawFileNameAttribute(make([]byte, len(rawAttribute)))
-			copy(rawFileNameAttribute, rawAttribute)
-			var fileNameAttribute FileNameAttribute
-			fileNameAttribute, err = rawFileNameAttribute.Parse()
-			if err != nil {
-				err = fmt.Errorf("failed to get filename Attribute %w", err)
-				fileNameAttributes = nil
-				standardInformationAttribute = StandardInformationAttribute{}
-				dataAttribute = DataAttribute{}
-				return
-			}
-			fileNameAttributes = append(fileNameAttributes, fileNameAttribute)
-		case codeStandardInformation:
-			rawStandardInformationAttribute := RawStandardInformationAttribute(make([]byte, len(rawAttribute)))
-			copy(rawStandardInformationAttribute, rawAttribute)
-			standardInformationAttribute, err = rawStandardInformationAttribute.Parse()
-			if err != nil {
-				err = fmt.Errorf("failed to get standard info Attribute %w", err)
-				fileNameAttributes = nil
-				standardInformationAttribute = StandardInformationAttribute{}
-				dataAttribute = DataAttribute{}
-				return
-			}
-		case codeData:
-			rawDataAttribute := RawDataAttribute(make([]byte, len(rawAttribute)))
-			copy(rawDataAttribute, rawAttribute)
-			dataAttribute.NonResidentDataAttribute, dataAttribute.ResidentDataAttribute, err = rawDataAttribute.Parse(bytesPerCluster)
-			if err != nil {
-				err = fmt.Errorf("failed to get data Attribute %w", err)
-				fileNameAttributes = nil
-				standardInformationAttribute = StandardInformationAttribute{}
-				dataAttribute = DataAttribute{}
-				return
-			}
-		case codeattributeList:
-			rawAttributeListAttribute := RawAttributeListAttribute(make([]byte, len(rawAttribute)))
-			copy(rawAttributeListAttribute, rawAttribute)
-			attributeListAttributes, err = rawAttributeListAttribute.Parse()
-			if err != nil {
-				err = fmt.Errorf("failed to get attribute list Attribute %w", err)
-				attributeListAttributes = AttributeListAttributes{}
-				return
-			}
-		}
-	}
-	return
+var validAttributeTypes = []byte{
+	magicNumberStandardInformation,
+	magicNumberAttributeList,
+	magicNumberFileName,
+	magicNumberVolumeVersion,
+	magicNumberSecurityDescriptor,
+	magicNumberVolumeName,
+	magicNumberVolumeInformation,
+	magicNumberData,
+	magicNumberIndexRoot,
+	magicNumberIndexAllocation,
+	magicNumberBitmap,
+	magicNumberSymbolicLink,
+	magicNumberReparsePoint,
+	magicNumberEaInformation,
+	magicNumberPropertySet,
 }
 
-// GetRawAttributes returns the attribute bytes from an unparsed mft record which is the method receiver. It takes recordHeader as an argument since the record header contains the offset for the start of the attributes.
-func (rawMftRecord RawMasterFileTableRecord) GetRawAttributes(recordHeader RecordHeader) (rawAttributes RawAttributes, err error) {
-	// Doing some sanity checks
-	if len(rawMftRecord) == 0 {
-		err = errors.New("received nil bytes")
-		return
-	}
-	if recordHeader.AttributesOffset == 0 {
-		err = errors.New("record header argument has an attribute offset value of 0")
-		return
+// GetAttributes parses a slice of raw attributes and returns its filename, standard information, and dat attributes. It takes an argument for input per cluster (typically 4096) which is used for computing data run information in a data attributes.
+func GetAttributes(input [][]byte, bytesPerCluster int64) (FileNameAttributes, StandardInformationAttribute, DataAttribute, AttributeListAttributes, error) {
+	// Sanity checks
+	size := len(input)
+	if size == 0 {
+		return FileNameAttributes{},
+			StandardInformationAttribute{},
+			DataAttribute{},
+			AttributeListAttributes{},
+			errors.New("nil sized rawAttributes slice")
+	} else if bytesPerCluster == 0 {
+		return FileNameAttributes{},
+			StandardInformationAttribute{},
+			DataAttribute{},
+			AttributeListAttributes{},
+			errors.New("received bytesPerCluster value of 0")
 	}
 
-	const offsetAttributeSize = 0x04
-	const lengthAttributeSize = 0x04
+	// init return variables
+	fnAttributes := make(FileNameAttributes, 0)
+	var siAttribute StandardInformationAttribute
+	var dataAttribute DataAttribute
+	attributesList := make(AttributeListAttributes, 0)
+
+	// Determine what each raw attribute is and parse it accordingly.
+	for _, rawAttribute := range input {
+
+		// Sanity check to make sure the attribute actually has input in it.
+		sizeOfRawAttribute := len(rawAttribute)
+		if sizeOfRawAttribute == 0 {
+			return FileNameAttributes{},
+				StandardInformationAttribute{},
+				DataAttribute{},
+				AttributeListAttributes{},
+				errors.New("came across a rawAttribute with a nil size")
+		}
+
+		// Check the first byte to see if it is one of the "magic number" input we care about. If it is, we parse those raw attributes accordingly.
+		switch rawAttribute[0x00] {
+		case magicNumberFileName:
+			fnAttribute, err := getFileNameAttribute(rawAttribute)
+			if err == nil {
+				fnAttributes = append(fnAttributes, fnAttribute)
+			}
+		case magicNumberStandardInformation:
+			siAttribute, _ = getStandardInformationAttribute(rawAttribute)
+		case magicNumberData:
+			var err error
+			var result interface{}
+			result, err = getDataAttribute(rawAttribute, bytesPerCluster)
+			if err != nil {
+				return FileNameAttributes{},
+					StandardInformationAttribute{},
+					DataAttribute{},
+					AttributeListAttributes{},
+					fmt.Errorf("failed to get data Attribute %w", err)
+			}
+
+			switch v := result.(type) {
+			case ResidentDataAttribute:
+				dataAttribute.ResidentDataAttribute = v
+			case NonResidentDataAttribute:
+				dataAttribute.NonResidentDataAttribute = v
+			}
+
+		case magicNumberAttributeList:
+			var err error
+			attributesList, err = getAttributeListAttribute(rawAttribute)
+			if err != nil {
+				err = fmt.Errorf("failed to get attribute list Attribute %w", err)
+				return FileNameAttributes{},
+					StandardInformationAttribute{},
+					DataAttribute{},
+					AttributeListAttributes{},
+					fmt.Errorf("failed to get attribute list Attribute %w", err)
+			}
+		}
+	}
+	return fnAttributes,
+		siAttribute,
+		dataAttribute,
+		attributesList,
+		nil
+}
+
+const (
+	offsetAttributeSize = 0x04
+	lengthAttributeSize = 0x04
+)
+
+// GetRawAttributes returns the attribute input from an unparsed mft record which is the method receiver. It takes recordHeader as an argument since the record header contains the offset for the start of the attributes.
+func GetRawAttributes(input []byte, recordHeader RecordHeader) (rawAttributes [][]byte, err error) {
+	// sanity checks
+	size := len(input)
+	if size == 0 {
+		return nil, errors.New("received nil input")
+	}
+	if recordHeader.AttributesOffset == 0 {
+		return nil, errors.New("record header argument has an attribute offset value of 0")
+	}
 
 	// Init variable that tracks how far to the next Attribute
 	var distanceToNextAttribute uint16
 	offset := recordHeader.AttributesOffset
-	sizeOfRawMftRecord := len(rawMftRecord)
 
 	for {
 		// Calculate offset to next Attribute
-		offset = offset + distanceToNextAttribute
+		offset += distanceToNextAttribute
 
 		// Break if the offset is beyond the byte slice
-		if offset > uint16(sizeOfRawMftRecord) || offset+0x04 > uint16(sizeOfRawMftRecord) {
+		if offset > uint16(size) || offset+0x04 > uint16(size) {
 			break
 		}
 
 		// Verify if the byte slice is actually an MFT Attribute
-		shouldWeContinue := isThisAnAttribute(rawMftRecord[offset])
-		if shouldWeContinue == false {
+		err = validateAttribute(input[offset])
+		if err != nil {
 			break
 		}
 
-		attributeSize := binary.LittleEndian.Uint16(rawMftRecord[offset+offsetAttributeSize : offset+offsetAttributeSize+lengthAttributeSize])
+		attributeSize := binary.LittleEndian.Uint16(input[offset+offsetAttributeSize : offset+offsetAttributeSize+lengthAttributeSize])
 		end := offset + attributeSize
 
-		rawAttribute := rawAttribute(make([]byte, attributeSize))
-		copy(rawAttribute, rawMftRecord[offset:end])
+		rawAttribute := make([]byte, attributeSize)
+		copy(rawAttribute, input[offset:end])
 
-		// Append the rawAttributes to the RawAttributes struct
+		// Append the rawAttributes to the rawAttributes struct
 		rawAttributes = append(rawAttributes, rawAttribute)
 
 		// Track the distance to the next Attribute based on the size of the current Attribute
-		distanceToNextAttribute = binary.LittleEndian.Uint16(rawMftRecord[offset+offsetAttributeSize : offset+offsetAttributeSize+lengthAttributeSize])
+		distanceToNextAttribute = binary.LittleEndian.Uint16(input[offset+offsetAttributeSize : offset+offsetAttributeSize+lengthAttributeSize])
 	}
 
-	return
+	return rawAttributes, nil
 }
 
-// Checks if the byte value equals a valid attribute type. We only do things with a few of these.
-func isThisAnAttribute(attributeHeaderToCheck byte) (result bool) {
-	// Init a byte slice that tracks all possible valid MFT Attribute types.
-	// We'll be used this to verify if what we are looking at is actually an MFT Attribute.
-	const codeStandardInformation = 0x10
-	const codeAttributeList = 0x20
-	const codeFileName = 0x30
-	const codeVolumeVersion = 0x40
-	const codeSecurityDescriptor = 0x50
-	const codeVolumeName = 0x60
-	const codeVolumeInformation = 0x70
-	const codeData = 0x80
-	const codeIndexRoot = 0x90
-	const codeIndexAllocation = 0xA0
-	const codeBitmap = 0xB0
-	const codeSymbolicLink = 0xC0
-	const codeReparsePoint = 0xD0
-	const codeEaInformation = 0xE0
-	const codePropertySet = 0xF0
-
-	validAttributeTypes := []byte{
-		codeStandardInformation,
-		codeAttributeList,
-		codeFileName,
-		codeVolumeVersion,
-		codeSecurityDescriptor,
-		codeVolumeName,
-		codeVolumeInformation,
-		codeData,
-		codeIndexRoot,
-		codeIndexAllocation,
-		codeBitmap,
-		codeSymbolicLink,
-		codeReparsePoint,
-		codeEaInformation,
-		codePropertySet,
-	}
-
-	// Verify if the byte slice is actually an MFT Attribute
+// Checks if the byte value equals a valid attribute type.
+func validateAttribute(attributeHeaderToCheck byte) error {
 	for _, validType := range validAttributeTypes {
 		if attributeHeaderToCheck == validType {
-			result = true
-			break
-		} else {
-			result = false
+			return nil
 		}
 	}
+	return errors.New("invalid attribute magic number")
+}
 
-	return
+func checkResidency(input byte) bool {
+	if input == 0x00 {
+		return true
+	}
+	return false
 }

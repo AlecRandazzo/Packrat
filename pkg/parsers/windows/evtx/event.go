@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/byteshelper"
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/sanitychecks"
+	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/sanitycheck"
 	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/timestamp"
 )
 
@@ -35,7 +35,7 @@ type event struct {
 
 func (event event) parse(inBytes []byte) error {
 	// Sanity checking
-	err := sanitychecks.SanityCheckByteSlice(inBytes, 0x18)
+	err := sanitycheck.Bytes(inBytes, 0x18)
 	if err != nil {
 		return fmt.Errorf("event record size too small: %w", err)
 	}

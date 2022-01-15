@@ -10,32 +10,32 @@ import (
 
 func Test_setupSearchTerms(t *testing.T) {
 	type args struct {
-		exportList ListOfFilesToExport
+		exportList FileExportList
 	}
 	tests := []struct {
 		name                     string
 		args                     args
-		wantListOfSearchKeywords listOfSearchTerms
+		wantListOfSearchKeywords searchTermsList
 		wantErr                  bool
 	}{
 		{
 			name: "this should be successful",
-			args: args{exportList: ListOfFilesToExport{
-				0: FileToExport{
-					FullPath:        `C:\windows`,
-					IsFullPathRegex: false,
-					FileName:        "fake.exe",
-					IsFileNameRegex: false,
+			args: args{exportList: FileExportList{
+				0: FileExport{
+					FullPath:      `C:\windows`,
+					FullPathRegex: false,
+					FileName:      "fake.exe",
+					FileNameRegex: false,
 				},
-				1: FileToExport{
-					FullPath:        `C:\\windows\\.*`,
-					IsFullPathRegex: true,
-					FileName:        `.*\.evtx`,
-					IsFileNameRegex: true,
+				1: FileExport{
+					FullPath:      `C:\\windows\\.*`,
+					FullPathRegex: true,
+					FileName:      `.*\.evtx`,
+					FileNameRegex: true,
 				},
 			}},
 			wantErr: false,
-			wantListOfSearchKeywords: listOfSearchTerms{
+			wantListOfSearchKeywords: searchTermsList{
 				0: searchTerms{
 					fullPathString: `c:\windows`,
 					fullPathRegex:  nil,
@@ -52,12 +52,12 @@ func Test_setupSearchTerms(t *testing.T) {
 		},
 		{
 			name: "empty filepath string",
-			args: args{exportList: ListOfFilesToExport{
-				0: FileToExport{
-					FullPath:        "",
-					IsFullPathRegex: false,
-					FileName:        "blah.exe",
-					IsFileNameRegex: false,
+			args: args{exportList: FileExportList{
+				0: FileExport{
+					FullPath:      "",
+					FullPathRegex: false,
+					FileName:      "blah.exe",
+					FileNameRegex: false,
 				},
 			}},
 			wantErr:                  true,
@@ -65,12 +65,12 @@ func Test_setupSearchTerms(t *testing.T) {
 		},
 		{
 			name: "empty filename string",
-			args: args{exportList: ListOfFilesToExport{
-				0: FileToExport{
-					FullPath:        `C:\windows`,
-					IsFullPathRegex: false,
-					FileName:        "",
-					IsFileNameRegex: false,
+			args: args{exportList: FileExportList{
+				0: FileExport{
+					FullPath:      `C:\windows`,
+					FullPathRegex: false,
+					FileName:      "",
+					FileNameRegex: false,
 				},
 			}},
 			wantErr:                  true,
@@ -78,12 +78,12 @@ func Test_setupSearchTerms(t *testing.T) {
 		},
 		{
 			name: "trailing slash in file path non regex",
-			args: args{exportList: ListOfFilesToExport{
-				0: FileToExport{
-					FullPath:        `C:\windows\`,
-					IsFullPathRegex: false,
-					FileName:        "whoa.exe",
-					IsFileNameRegex: false,
+			args: args{exportList: FileExportList{
+				0: FileExport{
+					FullPath:      `C:\windows\`,
+					FullPathRegex: false,
+					FileName:      "whoa.exe",
+					FileNameRegex: false,
 				},
 			}},
 			wantErr:                  true,
@@ -91,12 +91,12 @@ func Test_setupSearchTerms(t *testing.T) {
 		},
 		{
 			name: "trailing slash in file path regex",
-			args: args{exportList: ListOfFilesToExport{
-				0: FileToExport{
-					FullPath:        `C:\windows\`,
-					IsFullPathRegex: true,
-					FileName:        "whoa.exe",
-					IsFileNameRegex: false,
+			args: args{exportList: FileExportList{
+				0: FileExport{
+					FullPath:      `C:\windows\`,
+					FullPathRegex: true,
+					FileName:      "whoa.exe",
+					FileNameRegex: false,
 				},
 			}},
 			wantErr:                  true,

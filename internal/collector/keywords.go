@@ -9,16 +9,16 @@ import (
 	"strings"
 )
 
-// FileToExport is the file that you want to export.
-type FileToExport struct {
-	FullPath        string `yaml:"FullPath"`
-	IsFullPathRegex bool   `yaml:"IsFullPathRegex"`
-	FileName        string `yaml:"FileName"`
-	IsFileNameRegex bool   `yaml:"IsFileNameRegex"`
+// FileExport is the file that you want to export.
+type FileExport struct {
+	FullPath      string
+	FullPathRegex bool
+	FileName      string
+	FileNameRegex bool
 }
 
-// ListOfFilesToExport is a slice of files that you want to export.
-type ListOfFilesToExport []FileToExport
+// FileExportList is a slice of files that you want to export.
+type FileExportList []FileExport
 
 type searchTerms struct {
 	fullPathString string
@@ -27,33 +27,30 @@ type searchTerms struct {
 	fileNameRegex  *regexp.Regexp
 }
 
-type listOfSearchTerms []searchTerms
+type searchTermsList []searchTerms
 
-func setupSearchTerms(exportList ListOfFilesToExport) (listOfSearchKeywords listOfSearchTerms, err error) {
+func setupSearchTerms(exportList FileExportList) (searchTermsList, error) {
+	listOfSearchKeywords := make(searchTermsList, 0)
 	for _, value := range exportList {
 		// Sanity checking inputs
 		if value.FileName == "" {
-			err = errors.New("received empty filename string")
-			return
+			return nil, errors.New("received empty filename string")
 		} else if value.FullPath == "" {
-			err = errors.New("received empty filepath string")
-			return
+			return nil, errors.New("received empty filepath string")
 		}
 
 		// Normalize everything
 		value.FullPath = strings.ToLower(value.FullPath)
 		value.FileName = strings.ToLower(value.FileName)
 
-		if value.IsFullPathRegex == false && strings.HasSuffix(value.FullPath, `\`) == true {
-			err = fmt.Errorf("file path '%s' has a trailing '\\'", value.FullPath)
-			return
-		} else if value.IsFullPathRegex == true && strings.HasSuffix(value.FullPath, `\`) == true {
-			err = fmt.Errorf("file path '%s' has missing a trailing '\\\\'", value.FullPath)
-			return
+		if value.FullPathRegex == false && strings.HasSuffix(value.FullPath, `\`) == true {
+			return nil, fmt.Errorf("file path '%s' has a trailing '\\'", value.FullPath)
+		} else if value.FullPathRegex == true && strings.HasSuffix(value.FullPath, `\`) == true {
+			return nil, fmt.Errorf("file path '%s' has missing a trailing '\\\\'", value.FullPath)
 		}
 
 		searchKeywords := searchTerms{}
-		switch value.IsFullPathRegex {
+		switch value.FullPathRegex {
 		case false:
 			searchKeywords.fullPathString = value.FullPath
 			searchKeywords.fullPathRegex = nil
@@ -62,7 +59,7 @@ func setupSearchTerms(exportList ListOfFilesToExport) (listOfSearchKeywords list
 			searchKeywords.fullPathRegex = regexp.MustCompile(value.FullPath)
 		}
 
-		switch value.IsFileNameRegex {
+		switch value.FileNameRegex {
 		case false:
 			searchKeywords.fileNameString = value.FileName
 			searchKeywords.fileNameRegex = nil
@@ -74,5 +71,5 @@ func setupSearchTerms(exportList ListOfFilesToExport) (listOfSearchKeywords list
 		listOfSearchKeywords = append(listOfSearchKeywords, searchKeywords)
 	}
 
-	return
+	return listOfSearchKeywords, nil
 }

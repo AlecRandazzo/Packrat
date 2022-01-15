@@ -28,21 +28,20 @@ func TestDataRunsReader_Read(t *testing.T) {
 		byteSliceToPopulate []byte
 	}
 	tests := []struct {
-		name      string
-		fields    fields
-		args      args
-		logLevel  log.Level
-		dummy     dummyHandler
-		dummyFile string
-		wantBytes []byte
+		name         string
+		fields       fields
+		args         args
+		logLevel     log.Level
+		dummyHandler dummyHandler
+		wantBytes    []byte
 	}{
 		{
 			name:     "fake data run",
 			logLevel: log.DebugLevel,
-			dummy: dummyHandler{
-				Handle:       nil,
-				VolumeLetter: "c",
-				Vbr: vbr.VolumeBootRecord{
+			dummyHandler: dummyHandler{
+				handle:       nil,
+				volumeLetter: "c",
+				vbr: vbr.VolumeBootRecord{
 					VolumeLetter:           "c",
 					BytesPerSector:         0,
 					SectorsPerCluster:      0,
@@ -51,9 +50,9 @@ func TestDataRunsReader_Read(t *testing.T) {
 					MftRecordSize:          0,
 					ClustersPerIndexRecord: 0,
 				},
-				mftReader:            nil,
-				lastReadVolumeOffset: 0,
-				filePath:             filepath.FromSlash("../../test/testdata/dummyntfs"),
+				reader:     nil,
+				lastOffset: 0,
+				filePath:   filepath.FromSlash("../../test/testdata/dummyntfs"),
 			},
 			fields: fields{
 				VolumeHandler: &VolumeHandler{},
@@ -82,10 +81,16 @@ func TestDataRunsReader_Read(t *testing.T) {
 			if tt.logLevel == log.DebugLevel {
 				log.SetLevel(tt.logLevel)
 			}
-			handler, _ := GetVolumeHandler("c", tt.dummy)
-			defer handler.Handle.Close()
+
+			err := tt.dummyHandler.GetHandle()
+			if err != nil {
+				t.Errorf("failed to open dummyHandler file %s: %v", tt.dummyHandler.filePath, err)
+				return
+			}
+			defer tt.dummyHandler.handle.Close()
+
 			dataRunReader := &dataRunsReader{
-				VolumeHandler:                 &handler,
+				Handler:                       &tt.dummyHandler,
 				DataRuns:                      tt.fields.DataRuns,
 				fileName:                      tt.fields.fileName,
 				dataRunTracker:                tt.fields.dataRunTracker,

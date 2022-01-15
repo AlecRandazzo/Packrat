@@ -30,82 +30,78 @@ type mftRecordWithNonResidentAttributes struct {
 
 type listOfMftRecordWithNonResidentAttributes []mftRecordWithNonResidentAttributes
 
-func checkForPossibleMatch(listOfSearchKeywords listOfSearchTerms, fileNameAttributes mft.FileNameAttributes) (result bool, fileNameAttribute mft.FileNameAttribute, err error) {
+func checkForPossibleMatch(listOfSearchKeywords searchTermsList, fileNameAttributes mft.FileNameAttributes) (mft.FileNameAttribute, error) {
 	// Sanity Checking
 	if len(listOfSearchKeywords) == 0 {
-		err = errors.New("checkForPossibleMatch() received an empty listOfSearchTerms")
-		return
+		return mft.FileNameAttribute{}, errors.New("checkForPossibleMatch() received an empty searchTermsList")
 	}
 	if len(fileNameAttributes) == 0 {
-		err = errors.New("checkForPossibleMatch() received an empty fileNameAttributes")
-		return
+		return mft.FileNameAttribute{}, errors.New("checkForPossibleMatch() received an empty fileNameAttributes")
 	}
 
 	for _, attribute := range fileNameAttributes {
-		if strings.Contains(attribute.FileNamespace, "WIN32") == true || strings.Contains(attribute.FileNamespace, "POSIX") {
+		if strings.Contains(string(attribute.FileNamespace), "WIN32") ||
+			strings.Contains(string(attribute.FileNamespace), "WIN32 & DOS") ||
+			strings.Contains(string(attribute.FileNamespace), "POSIX") {
 			for _, value := range listOfSearchKeywords {
 				if value.fileNameRegex != nil {
-					if value.fileNameRegex.MatchString(strings.ToLower(attribute.FileName)) == true {
-						result = true
-						fileNameAttribute = attribute
-						return
+					if value.fileNameRegex.MatchString(strings.ToLower(attribute.FileName)) {
+						return attribute, nil
 					}
 				} else {
 					if value.fileNameString == strings.ToLower(attribute.FileName) {
-						result = true
-						fileNameAttribute = attribute
-						return
+						return attribute, nil
 					}
 				}
 			}
 		}
 	}
 
-	result = false
-	return
+	return mft.FileNameAttribute{}, errors.New("no match")
 }
 
-func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords listOfSearchTerms) (listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree, err error) {
+func findPossibleMatches(handler handler, listOfSearchKeywords searchTermsList) (possibleMatches, mft.DirectoryTree, error) {
 	log.Debugf("Starting to scan the MFT's dataruns to create a tree of directories and to search for the for the following search terms: %+v", listOfSearchKeywords)
 
 	// Init memory
 	unresolvedDirectorTree := make(mft.UnresolvedDirectoryTree)
-	listOfPossibleMatches = make(possibleMatches, 0)
+	listOfPossibleMatches := make(possibleMatches, 0)
 	recordOffsetTracker := make(mftRecordVolumeOffsetTracker)
 	listOfMftRecordWithNonResidentAttributes := make(listOfMftRecordWithNonResidentAttributes, 0)
+	var err error
 
 	for err != io.EOF {
-		buffer := mft.RawMasterFileTableRecord(make([]byte, volumeHandler.Vbr.MftRecordSize))
-		_, err = volumeHandler.mftReader.Read(buffer)
+		buffer := make([]byte, handler.Vbr().MftRecordSize)
+		_, err = handler.Reader().Read(buffer)
 		if err == io.EOF {
 			err = nil
 			break
 		}
 
-		result, _ := buffer.IsThisAnMftRecord()
-		if result == false {
+		err = mft.ValidateMftRecordBytes(buffer)
+		if err != nil {
 			continue
 		}
 
-		result, err = buffer.IsThisADirectory()
-		if result == true {
+		err = mft.ValidateDirectory(buffer)
+		if err == nil {
 			unresolvedDirectory, _ := mft.ConvertRawMFTRecordToDirectory(buffer)
 			unresolvedDirectorTree[unresolvedDirectory.RecordNumber] = unresolvedDirectory
-			recordOffsetTracker[unresolvedDirectory.RecordNumber] = volumeHandler.lastReadVolumeOffset
+			recordOffsetTracker[unresolvedDirectory.RecordNumber] = handler.LastOffset()
 		} else {
 			// Parse what we need out of the entry for us to copy the file
-			rawRecordHeader, _ := buffer.GetRawRecordHeader()
-			recordHeader, _ := rawRecordHeader.Parse()
-			recordOffsetTracker[recordHeader.RecordNumber] = volumeHandler.lastReadVolumeOffset
-			rawAttributes, _ := buffer.GetRawAttributes(recordHeader)
-			fileNameAttributes, _, dataAttribute, attributeListAttributes, _ := rawAttributes.Parse(volumeHandler.Vbr.BytesPerCluster)
-			result, fileNameAttribute, err := checkForPossibleMatch(listOfSearchKeywords, fileNameAttributes)
-			if err != nil || result == false {
+			recordHeader, _ := mft.GetRecordHeaders(buffer)
+			recordOffsetTracker[recordHeader.RecordNumber] = handler.LastOffset()
+			rawAttributes, _ := mft.GetRawAttributes(buffer, recordHeader)
+			fileNameAttributes, _, dataAttribute, attributeListAttributes, _ := mft.GetAttributes(rawAttributes, handler.Vbr().BytesPerCluster)
+			var fileNameAttribute mft.FileNameAttribute
+			fileNameAttribute, err = checkForPossibleMatch(listOfSearchKeywords, fileNameAttributes)
+			if err != nil {
 				continue
 			}
 
 			if attributeListAttributes == nil {
-				log.Debugf("Found a possible match. File name is '%s' and its MFT offset is %d. Here is the MFT record hex: %x", fileNameAttribute.FileName, volumeHandler.lastReadVolumeOffset, []byte(buffer))
+				log.Debugf("Found a possible match. File name is '%s' and its MFT offset is %d. Here is the MFT record hex: %x", fileNameAttribute.FileName, handler.LastOffset(), buffer)
 				aPossibleMatch := possibleMatch{
 					fileNameAttribute: fileNameAttribute,
 					dataRuns:          dataAttribute.NonResidentDataAttribute.DataRuns,
@@ -113,7 +109,7 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 				listOfPossibleMatches = append(listOfPossibleMatches, aPossibleMatch)
 				continue
 			} else {
-				log.Debugf("Found a possible match which has an attribute list. File name is '%s' and its MFT offset is %d. Here is the attribute list: %+v Here is the MFT record hex: %x", fileNameAttribute.FileName, volumeHandler.lastReadVolumeOffset, attributeListAttributes, buffer)
+				log.Debugf("Found a possible match which has an attribute list. File name is '%s' and its MFT offset is %d. Here is the attribute list: %+v Here is the MFT record hex: %x", fileNameAttribute.FileName, handler.LastOffset(), attributeListAttributes, buffer)
 				trackThisForLater := mftRecordWithNonResidentAttributes{
 					fnAttribute:             fileNameAttribute,
 					dataAttribute:           dataAttribute,
@@ -127,7 +123,8 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 
 	// Resolve the possible matches that had attribute lists
 	if len(listOfMftRecordWithNonResidentAttributes) != 0 {
-		newVolumeHandle, _ := volumeHandler.GetHandle(volumeHandler.VolumeLetter)
+		newVolumeHandle := NewVolumeHandler(handler.VolumeLetter())
+		_ = newVolumeHandle.GetHandle()
 		for _, record := range listOfMftRecordWithNonResidentAttributes {
 			attributeCounter := 0
 			sizeOfAttributeListAttributes := len(record.attributeListAttributes)
@@ -137,10 +134,10 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 				case 0x80:
 					nonResidentRecordNumber := record.attributeListAttributes[attributeCounter].MFTReferenceRecordNumber
 					absoluteVolumeOffset := recordOffsetTracker[nonResidentRecordNumber]
-					_, _ = newVolumeHandle.Seek(absoluteVolumeOffset, 0)
-					buffer := mft.RawMasterFileTableRecord(make([]byte, volumeHandler.Vbr.BytesPerCluster))
-					_, _ = newVolumeHandle.Read(buffer)
-					mftRecord, _ := buffer.Parse(volumeHandler.Vbr.BytesPerCluster)
+					_, _ = newVolumeHandle.Handle().Seek(absoluteVolumeOffset, 0)
+					buffer := make([]byte, handler.Vbr().BytesPerCluster)
+					_, _ = newVolumeHandle.Handle().Read(buffer)
+					mftRecord, _ := mft.ParseMftRecord(buffer, handler.Vbr().BytesPerCluster)
 					log.Debugf("Went to absolute offset %d to get a non resident data attribute with record number %d. Parsed the record for the values %+v. Raw hex: %x", absoluteVolumeOffset, nonResidentRecordNumber, mftRecord, buffer)
 					tempDataRunCounter := 0
 					numberOfDataRuns := len(mftRecord.DataAttribute.NonResidentDataAttribute.DataRuns)
@@ -156,7 +153,7 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 			}
 			aPossibleMatch := possibleMatch{
 				fileNameAttribute: record.fnAttribute,
-				dataRuns:          dataRuns,
+				dataRuns:          record.dataAttribute.NonResidentDataAttribute.DataRuns,
 			}
 			log.Debugf("Pieced together a series of non resident data attributes and got the following: %+v", aPossibleMatch)
 			listOfPossibleMatches = append(listOfPossibleMatches, aPossibleMatch)
@@ -164,9 +161,10 @@ func findPossibleMatches(volumeHandler *VolumeHandler, listOfSearchKeywords list
 	}
 
 	log.Debugf("Resolving %d directories we found to build their full paths.", len(unresolvedDirectorTree))
-	directoryTree, _ = unresolvedDirectorTree.Resolve(volumeHandler.VolumeLetter)
+	directoryTree, _ := unresolvedDirectorTree.Resolve(handler.VolumeLetter())
 	log.Debugf("Successfully resolved %d directories.", len(directoryTree))
-	return
+
+	return listOfPossibleMatches, directoryTree, nil
 }
 
 type foundFile struct {
@@ -177,9 +175,9 @@ type foundFile struct {
 
 type foundFiles []foundFile
 
-func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) (foundFilesList foundFiles) {
+func confirmFoundFiles(listOfSearchKeywords searchTermsList, listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) foundFiles {
 	log.Debug("Determining what possible matches are true matches.")
-	foundFilesList = make(foundFiles, 0)
+	foundFilesList := make(foundFiles, 0)
 	for _, possibleMatch := range listOfPossibleMatches {
 		// First make sure that the parent directory is in the directory tree
 		if _, ok := directoryTree[possibleMatch.fileNameAttribute.ParentDirRecordNumber]; ok {
@@ -220,5 +218,5 @@ func confirmFoundFiles(listOfSearchKeywords listOfSearchTerms, listOfPossibleMat
 			continue
 		}
 	}
-	return
+	return foundFilesList
 }

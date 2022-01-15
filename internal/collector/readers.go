@@ -13,7 +13,7 @@ import (
 
 // dataRunsReader contains all the information needed to support the data runs reader function
 type dataRunsReader struct {
-	VolumeHandler                 *VolumeHandler
+	Handler                       handler
 	DataRuns                      mft.DataRuns
 	fileName                      string
 	dataRunTracker                int
@@ -28,9 +28,8 @@ func (dataRunReader *dataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 
 	// Sanity checking
 	if len(dataRunReader.DataRuns) == 0 {
-		err = io.ErrUnexpectedEOF
 		log.Warnf("failed to read %s, received: %v", dataRunReader.fileName, err)
-		return
+		return 0, io.ErrUnexpectedEOF
 	}
 
 	// Check if this reader has been initialized, if not, do so.
@@ -42,8 +41,9 @@ func (dataRunReader *dataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 		}
 		dataRunReader.dataRunTracker = 0
 		dataRunReader.dataRunBytesLeftToReadTracker = dataRunReader.DataRuns[dataRunReader.dataRunTracker].Length
-		dataRunReader.VolumeHandler.lastReadVolumeOffset, _ = dataRunReader.VolumeHandler.Handle.Seek(dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
-		dataRunReader.VolumeHandler.lastReadVolumeOffset -= bufferSize
+		newOffset, _ := dataRunReader.Handler.Handle().Seek(dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
+		newOffset = dataRunReader.Handler.LastOffset() - bufferSize
+		dataRunReader.Handler.UpdateLastOffset(newOffset)
 		dataRunReader.initialized = true
 
 		// These are for debug purposes
@@ -77,13 +77,13 @@ func (dataRunReader *dataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 		bufferSize = dataRunReader.totalFileSize - dataRunReader.totalByesRead
 	}
 	buffer := make([]byte, bufferSize)
-	dataRunReader.VolumeHandler.lastReadVolumeOffset += bufferSize
-	numberOfBytesRead, _ = dataRunReader.VolumeHandler.Handle.Read(buffer)
+	newOffset := dataRunReader.Handler.LastOffset() + bufferSize
+	dataRunReader.Handler.UpdateLastOffset(newOffset)
+	numberOfBytesRead, _ = dataRunReader.Handler.Handle().Read(buffer)
 	copy(byteSliceToPopulate, buffer)
 	dataRunReader.totalByesRead += bufferSize
 	if dataRunReader.totalFileSize == dataRunReader.totalByesRead {
-		err = io.EOF
-		return
+		return 0, io.EOF
 	}
 
 	// Check to see if there are any bytes left to read in the current data run
@@ -95,29 +95,29 @@ func (dataRunReader *dataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 		dataRunReader.dataRunBytesLeftToReadTracker = dataRunReader.DataRuns[dataRunReader.dataRunTracker].Length
 
 		// Seek to the offset of the next datarun
-		dataRunReader.VolumeHandler.lastReadVolumeOffset, _ = dataRunReader.VolumeHandler.Handle.Seek(dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
-		dataRunReader.VolumeHandler.lastReadVolumeOffset -= bufferSize
+		newOffset, _ = dataRunReader.Handler.Handle().Seek(dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
+		newOffset -= bufferSize
+		dataRunReader.Handler.UpdateLastOffset(newOffset)
 
 		log.Debugf("Reading data run number %d of %d for file '%s' which has a length of %d bytes at absolute offset %d",
 			dataRunReader.dataRunTracker+1,
 			len(dataRunReader.DataRuns),
 			dataRunReader.fileName,
 			dataRunReader.DataRuns[dataRunReader.dataRunTracker].Length,
-			dataRunReader.VolumeHandler.lastReadVolumeOffset+bufferSize,
+			dataRunReader.Handler.LastOffset()+bufferSize,
 		)
 	}
 
-	return
+	return numberOfBytesRead, nil
 }
 
-func apiFileReader(file foundFile) (reader io.Reader, err error) {
-	reader, err = os.Open(file.fullPath)
-	return
+func apiFileReader(file foundFile) (io.Reader, error) {
+	return os.Open(file.fullPath)
 }
 
-func rawFileReader(handler *VolumeHandler, file foundFile) (reader io.Reader) {
-	reader = &dataRunsReader{
-		VolumeHandler:                 handler,
+func rawFileReader(handler handler, file foundFile) io.Reader {
+	return &dataRunsReader{
+		Handler:                       handler,
 		DataRuns:                      file.dataRuns,
 		fileName:                      file.fullPath,
 		dataRunTracker:                0,
@@ -125,5 +125,4 @@ func rawFileReader(handler *VolumeHandler, file foundFile) (reader io.Reader) {
 		totalFileSize:                 file.fileSize,
 		initialized:                   false,
 	}
-	return
 }

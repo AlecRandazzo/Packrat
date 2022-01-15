@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestTimeStamp_Parse(t *testing.T) {
+func Test_Parse(t *testing.T) {
 	tests := []struct {
 		name           string
 		timestamp      time.Time

@@ -9,14 +9,11 @@ import (
 	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/byteshelper"
 )
 
-// RawTimestamp is a []byte alias
-type RawTimestamp []byte
-
 // Parse a byte slice containing a unix timestamp and convert it to a timestamp string.
 func Parse(raw []byte) (timestamp time.Time, err error) {
-	// verify that we are getting the bytes we need
+	// verify that we are getting valid data
 	if len(raw) != 8 {
-		return time.Time{}, fmt.Errorf("timestamp.parse() received %d bytes, not 8 bytes", len(raw))
+		return time.Time{}, fmt.Errorf("received %d bytes, not 8 bytes", len(raw))
 	}
 
 	var delta = time.Date(1970-369, 1, 1, 0, 0, 0, 0, time.UTC).UnixNano()

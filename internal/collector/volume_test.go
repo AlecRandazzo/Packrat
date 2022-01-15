@@ -3,104 +3,73 @@
 package collector
 
 import (
-	"errors"
+	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
-	"path/filepath"
-	"reflect"
 	"testing"
 
 	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/vbr"
 )
 
-func TestGetVolumeHandler(t *testing.T) {
-	type args struct {
-		volumeLetter  string
-		volumeHandler dummyHandler
-	}
-	tests := []struct {
-		name     string
-		args     args
-		wantVBR  vbr.VolumeBootRecord
-		wantErr  bool
-		filePath string
-	}{
-		{
-			name: "success",
-			args: args{
-				volumeLetter:  "C",
-				volumeHandler: dummyHandler{},
-			},
-			wantVBR: vbr.VolumeBootRecord{
-				VolumeLetter:           "",
-				BytesPerSector:         512,
-				SectorsPerCluster:      8,
-				BytesPerCluster:        4096,
-				MftByteOffset:          4096,
-				MftRecordSize:          1024,
-				ClustersPerIndexRecord: 1,
-			},
-			wantErr:  false,
-			filePath: filepath.FromSlash("../../test/testdata/dummyntfs"),
-		},
-		{
-			name: "bad volume letter",
-			args: args{
-				volumeLetter:  "error",
-				volumeHandler: dummyHandler{},
-			},
-			wantErr:  true,
-			filePath: filepath.FromSlash("../../test/testdata/dummyntfs"),
-		},
-		{
-			name: "bad vbr1",
-			args: args{
-				volumeLetter:  "C",
-				volumeHandler: dummyHandler{},
-			},
-			wantErr:  true,
-			filePath: filepath.FromSlash("../../test/testdata/dummyntfs-badvbr1"),
-		},
-		{
-			name: "bad vbr2",
-			args: args{
-				volumeLetter:  "C",
-				volumeHandler: dummyHandler{},
-			},
-			wantErr:  true,
-			filePath: filepath.FromSlash("../../test/testdata/dummyntfs-badvbr2"),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.args.volumeHandler.filePath = tt.filePath
-			gotVolume, err := GetVolumeHandler(tt.args.volumeLetter, tt.args.volumeHandler)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetVolumeHandler() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotVolume.Vbr, tt.wantVBR) {
-				t.Errorf("GetVolumeHandler() gotVBR = %+v, want %+v", gotVolume.Vbr, tt.wantVBR)
-			}
-		})
-	}
-}
-
 type dummyHandler struct {
-	Handle               *os.File
-	VolumeLetter         string
-	Vbr                  vbr.VolumeBootRecord
-	mftReader            io.Reader
-	lastReadVolumeOffset int64
-	filePath             string
+	handle       *os.File
+	volumeLetter string
+	vbr          vbr.VolumeBootRecord
+	reader       io.Reader
+	lastOffset   int64
+	filePath     string
+	err          error
 }
 
-func (dummy dummyHandler) GetHandle(volumeLetter string) (handle *os.File, err error) {
-	if volumeLetter == "error" {
-		err = errors.New("faux error")
-		return
+func (dummy *dummyHandler) GetHandle() error {
+	if dummy.err != nil {
+		return dummy.err
 	}
-	handle, _ = os.Open(dummy.filePath)
+	var err error
+	dummy.handle, err = os.Open(dummy.filePath)
+	// Parse the VBR to get details we need about the volume.
+	volumeBootRecord := make([]byte, 512)
+	_, err = dummy.handle.Read(volumeBootRecord)
+	if err != nil {
+		return fmt.Errorf("GetHandle() failed to read the volume boot record on volume %v: %w", dummy.volumeLetter, err)
+	}
+	dummy.vbr, err = vbr.Parse(volumeBootRecord)
+	if err != nil {
+		return fmt.Errorf("NewOldVolumeHandler() failed to parse vbr from volume letter %s: %w", dummy.volumeLetter, err)
+	}
+	log.Debugf("Successfully got a file handle to volume %v and read its volume boot record.", dummy.volumeLetter)
+
+	return err
+}
+
+func (dummy dummyHandler) VolumeLetter() string {
+	return dummy.volumeLetter
+}
+
+func (dummy dummyHandler) Handle() *os.File {
+	return dummy.handle
+}
+
+func (dummy *dummyHandler) UpdateReader(newReader io.Reader) {
+	dummy.reader = newReader
+	return
+}
+
+func (dummy dummyHandler) Vbr() vbr.VolumeBootRecord {
+	return dummy.vbr
+}
+
+func (dummy dummyHandler) Reader() io.Reader {
+	return dummy.reader
+}
+
+func (dummy dummyHandler) LastOffset() int64 {
+	return dummy.lastOffset
+}
+
+func (dummy *dummyHandler) UpdateLastOffset(newOffset int64) {
+	dummy.lastOffset = newOffset
 	return
 }
 
@@ -111,7 +80,6 @@ func Test_GetHandle(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		volume  VolumeHandler
 		wantErr bool
 	}{
 		{
@@ -132,136 +100,13 @@ func Test_GetHandle(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.volume.GetHandle(tt.args.volumeLetter)
+			handle := NewVolumeHandler(tt.args.volumeLetter)
+			err := handle.GetHandle()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getHandle() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-		})
-	}
-}
-
-func Test_identifyVolumesOfInterest(t *testing.T) {
-	type args struct {
-		exportList *ListOfFilesToExport
-	}
-	tests := []struct {
-		name                  string
-		args                  args
-		wantVolumesOfInterest []string
-		wantErr               bool
-	}{
-		{
-			name: "systemdrive and d",
-			args: args{exportList: &ListOfFilesToExport{
-				0: FileToExport{
-					FullPath:        `%SYSTEMDRIVE%:\$MFT`,
-					IsFullPathRegex: false,
-					FileName:        "$MFT",
-					IsFileNameRegex: false,
-				},
-				1: FileToExport{
-					FullPath:        `D:\$MFT`,
-					IsFullPathRegex: false,
-					FileName:        "$MFT",
-					IsFileNameRegex: false,
-				},
-				2: FileToExport{
-					FullPath:        `D:\blah`,
-					IsFullPathRegex: false,
-					FileName:        "blah",
-					IsFileNameRegex: false,
-				},
-			}},
-			wantVolumesOfInterest: []string{"C", "d"},
-			wantErr:               false,
-		},
-		{
-			name: "not a real volume",
-			args: args{exportList: &ListOfFilesToExport{
-				0: FileToExport{
-					FullPath:        `1:\$MFT`,
-					IsFullPathRegex: false,
-					FileName:        "$MFT",
-					IsFileNameRegex: false,
-				},
-			}},
-			wantVolumesOfInterest: nil,
-			wantErr:               true,
-		},
-		{
-			name: "bad input",
-			args: args{exportList: &ListOfFilesToExport{
-				0: FileToExport{
-					FullPath:        `CD:\$MFT`,
-					IsFullPathRegex: false,
-					FileName:        "$MFT",
-					IsFileNameRegex: false,
-				},
-			}},
-			wantVolumesOfInterest: nil,
-			wantErr:               true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotVolumesOfInterest, err := identifyVolumesOfInterest(tt.args.exportList)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("identifyVolumesOfInterest() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotVolumesOfInterest, tt.wantVolumesOfInterest) {
-				t.Errorf("identifyVolumesOfInterest() gotVolumesOfInterest = %v, want %v", gotVolumesOfInterest, tt.wantVolumesOfInterest)
-			}
-		})
-	}
-}
-
-func Test_isLetter(t *testing.T) {
-	type args struct {
-		s string
-	}
-	tests := []struct {
-		name       string
-		args       args
-		wantResult bool
-		wantErr    bool
-	}{
-		{
-			name:       "letter c",
-			args:       args{s: "C"},
-			wantResult: true,
-			wantErr:    false,
-		},
-		{
-			name:       "nil input",
-			args:       args{s: ""},
-			wantResult: false,
-			wantErr:    true,
-		},
-		{
-			name:       "string length of 2",
-			args:       args{s: "CC"},
-			wantResult: false,
-			wantErr:    true,
-		},
-		{
-			name:       "number input",
-			args:       args{s: "1"},
-			wantResult: false,
-			wantErr:    false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotResult, err := isLetter(tt.args.s)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("isLetter() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotResult != tt.wantResult {
-				t.Errorf("isLetter() gotResult = %v, want %v", gotResult, tt.wantResult)
-			}
+			handle.Handle().Close()
 		})
 	}
 }

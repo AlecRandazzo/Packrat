@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/byteshelper"
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/sanitychecks"
+	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/sanitycheck"
 )
 
 // These are effectively constants
@@ -46,7 +46,7 @@ type fileFlags struct{}
 
 func (fileHeader fileHeader) parse(inBytes []byte) error {
 	// Sanity checking
-	err := sanitychecks.SanityCheckByteSlice(inBytes, 4096)
+	err := sanitycheck.Bytes(inBytes, 4096)
 	if err != nil {
 		return fmt.Errorf("file header should be 4096 inBytes in size, received %d: %w", len(inBytes), err)
 	}

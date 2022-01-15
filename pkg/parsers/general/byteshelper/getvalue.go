@@ -4,6 +4,7 @@ package byteshelper
 
 import (
 	"errors"
+	"reflect"
 )
 
 type DataLocation struct {
@@ -24,10 +25,9 @@ func GetValue(bytes []byte, dataLocation DataLocation) ([]byte, error) {
 	if dataSize < int(dataLocation.Length)+int(dataLocation.Offset) {
 		return nil, errors.New("GetValue() received a []byte that is not large enough to contain the dataLocation")
 	}
-	nilDataLocation := DataLocation{}
-	if dataLocation == nilDataLocation {
+	if reflect.DeepEqual(dataLocation, DataLocation{}) {
 		return nil, errors.New("GetValue() received a nil DataLocation")
 	}
 
-	return bytes[dataLocation.Offset : dataLocation.Offset+dataLocation.Length], nil
+	return bytes[dataLocation.Offset : int(dataLocation.Offset)+int(dataLocation.Length)], nil
 }
