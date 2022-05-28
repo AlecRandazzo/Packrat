@@ -14,18 +14,18 @@ import (
 type RecordHeader struct {
 	AttributesOffset uint16
 	RecordNumber     uint32
-	Flags            RecordHeaderFlags
+	Flags            Flags
 }
 
-// RecordHeaderFlags contains parsed record header flag values.
-type RecordHeaderFlags struct {
-	FlagDeleted   bool
-	FlagDirectory bool
+// Flags contains parsed record header flag values.
+type Flags struct {
+	Deleted   bool
+	Directory bool
 }
 
 var (
 	headerAttributeOffsetLocation = byteshelper.NewDataLocation(0x14, 0x01)
-	recordHeaderFlagLocation      = byteshelper.NewDataLocation(0x16, 0x01)
+	headerFlagLocation            = byteshelper.NewDataLocation(0x16, 0x01)
 	headerRecordNumberLocation    = byteshelper.NewDataLocation(0x2C, 0x04)
 )
 
@@ -46,8 +46,8 @@ func GetRecordHeaders(input []byte) (RecordHeader, error) {
 	buffer, _ := byteshelper.GetValue(input, headerAttributeOffsetLocation)
 	header.AttributesOffset = uint16(buffer[0])
 
-	buffer, _ = byteshelper.GetValue(input, recordHeaderFlagLocation)
-	header.Flags = getRecordHeaderFlags(buffer[0])
+	buffer, _ = byteshelper.GetValue(input, headerFlagLocation)
+	header.Flags = getHeaderFlags(buffer[0])
 
 	buffer, _ = byteshelper.GetValue(input, headerRecordNumberLocation)
 	header.RecordNumber, _ = byteshelper.LittleEndianBinaryToUInt32(buffer)
@@ -62,17 +62,17 @@ const (
 	codeDirectory = 0x03
 )
 
-// getRecordHeaderFlags parses the raw record header flag.
-func getRecordHeaderFlags(input byte) RecordHeaderFlags {
+// getHeaderFlags parses the raw record header flag.
+func getHeaderFlags(input byte) Flags {
 	// init return variable
-	var flags RecordHeaderFlags
+	var flags Flags
 
 	// interpret byte
 	switch input {
 	case codeDeletedFile:
-		flags.FlagDeleted = true
+		flags.Deleted = true
 	case codeDirectory:
-		flags.FlagDirectory = true
+		flags.Directory = true
 	}
 
 	return flags

@@ -4,69 +4,71 @@ package mft
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
+	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/byteshelper"
+	"reflect"
 )
 
-// MasterFileTableRecord contains information on a parsed MFT record
-type MasterFileTableRecord struct {
-	RecordHeader                  RecordHeader
+// Record contains information on a parsed MFT record
+type Record struct {
+	Header                        RecordHeader
 	StandardInformationAttributes StandardInformationAttribute
 	FileNameAttributes            []FileNameAttribute
 	DataAttribute                 DataAttribute
 	AttributeList                 AttributeListAttributes
+	Metadata                      struct {
+		MftOffset               uint64
+		FullPath                string
+		ChosenFileNameAttribute FileNameAttribute
+	}
 }
 
-type write interface {
-	Write(p []byte) (n int, err error)
-}
-
-func Parse(reader io.Reader, writer io.Writer) {
-
-}
-
-// ParseMftRecord the raw MFT record receiver and returns a parsed mft record.
-func ParseMftRecord(input []byte, bytesPerCluster int64) (MasterFileTableRecord, error) {
+// ParseRecord the raw MFT record and returns a parsed mft record.
+func ParseRecord(input []byte, bytesPerSector, bytesPerCluster uint) (Record, error) {
 	// Sanity checks
 	size := len(input)
 	if size == 0 {
-		return MasterFileTableRecord{}, errors.New("received nil input")
+		return Record{}, errors.New("received nil input")
+	}
+	if bytesPerSector == 0 {
+		return Record{}, errors.New("input of 0 for bytesPerSector is not valid, typically this value is 512")
 	}
 	if bytesPerCluster == 0 {
-		return MasterFileTableRecord{}, errors.New("input per cluster of 0, typically this value is 4096")
+		return Record{}, errors.New("input of 0 for bytesPerCluster is not valid, typically this value is 4096")
 	}
 
 	// init return variables
-	var mft MasterFileTableRecord
+	var mft Record
 
 	err := ValidateMftRecordBytes(input)
 	if err != nil {
-		return MasterFileTableRecord{}, fmt.Errorf("this is not an mft record: %w", err)
+		return Record{}, fmt.Errorf("this is not an mft record: %w", err)
+	}
+	err = fixup(input, bytesPerSector)
+	if err != nil {
+		return Record{}, fmt.Errorf("fixup failed: %w", err)
 	}
 
 	input = trimSlackSpace(input)
 
-	mft.RecordHeader, err = GetRecordHeaders(input)
+	mft.Header, err = GetRecordHeaders(input)
 	if err != nil {
-		return MasterFileTableRecord{}, fmt.Errorf("failed to get record headers: %w", err)
-	}
-
-	if mft.RecordHeader.RecordNumber == 419091 {
-		fmt.Printf("%x\n", input)
+		return Record{}, fmt.Errorf("failed to get record headers: %w", err)
 	}
 
 	var rawAttributes [][]byte
-	rawAttributes, err = GetRawAttributes(input, mft.RecordHeader)
+	rawAttributes, err = GetRawAttributes(input, mft.Header)
 	if err != nil {
-		return MasterFileTableRecord{}, fmt.Errorf("failed to get raw data attributes: %w", err)
+		return Record{}, fmt.Errorf("failed to get raw data attributes: %w", err)
 	}
 
 	mft.FileNameAttributes, mft.StandardInformationAttributes, mft.DataAttribute, mft.AttributeList, _ = GetAttributes(rawAttributes, bytesPerCluster)
 	return mft, nil
 }
 
-// Trims off slack space after end sequence 0xffffffff
+// trimSlackSpace trims off slack space after end sequence 0xffffffff
 func trimSlackSpace(input []byte) []byte {
 	lenMftRecordBytes := len(input)
 	mftRecordEndByteSequence := []byte{0xff, 0xff, 0xff, 0xff}
@@ -78,4 +80,46 @@ func trimSlackSpace(input []byte) []byte {
 	}
 
 	return input
+}
+
+var (
+	updateSequenceOffsetLocation     = byteshelper.NewDataLocation(0x04, 0x02)
+	updateSequenceBufferSizeLocation = byteshelper.NewDataLocation(0x06, 0x02)
+)
+
+// fixup MFT record
+func fixup(input []byte, bytesPerSector uint) error {
+	// Sanity checks
+	inputSize := uint(len(input))
+	if inputSize == 0 {
+		return errors.New("nil input bytes received by fixup()")
+	}
+	if inputSize < bytesPerSector {
+		return errors.New("input is smaller than sector size")
+	}
+	if bytesPerSector == 0 {
+		return errors.New("bytesPerSector is 0")
+	}
+
+	buffer, _ := byteshelper.GetValue(input, updateSequenceOffsetLocation)
+	updateSequenceOffset := binary.LittleEndian.Uint16(buffer)
+	updateSequence := input[updateSequenceOffset : updateSequenceOffset+2]
+
+	buffer, _ = byteshelper.GetValue(input, updateSequenceBufferSizeLocation)
+
+	updateSequenceBufferSize := binary.LittleEndian.Uint16(buffer)
+	updateSequenceBuffer := input[updateSequenceOffset+2 : updateSequenceOffset+(updateSequenceBufferSize*2)]
+
+	i := uint(512)
+	bufferIndex := 0
+	for i <= inputSize {
+		if reflect.DeepEqual(input[i-2:i], updateSequence) {
+			input[i-2] = updateSequenceBuffer[bufferIndex]
+			input[i-1] = updateSequenceBuffer[bufferIndex+1]
+		}
+		i += bytesPerSector
+		bufferIndex += 2
+	}
+
+	return nil
 }

@@ -53,7 +53,7 @@ var (
 )
 
 // getDataAttribute parses the raw data attribute. bytesPerCluster is typically 4096. The function returns an interface type that is either a ResidentDataAttribute or NonResidentDataAttribute.
-func getDataAttribute(input []byte, bytesPerCluster int64) (dataAttribute interface{}, err error) {
+func getDataAttribute(input []byte, bytesPerCluster uint) (dataAttribute interface{}, err error) {
 	// Sanity checks on data the method receives to make sure it can successfully do work on the data.
 	sizeOfRawDataAttribute := len(input)
 	if sizeOfRawDataAttribute == 0 {
@@ -106,7 +106,7 @@ func getResidentDataAttribute(input []byte) (ResidentDataAttribute, error) {
 const offsetDataRunOffset = 0x20
 
 // getNonResidentDataAttribute parses the raw non resident data attribute.
-func getNonResidentDataAttribute(input []byte, bytesPerCluster int64) (NonResidentDataAttribute, error) {
+func getNonResidentDataAttribute(input []byte, bytesPerCluster uint) (NonResidentDataAttribute, error) {
 	// Sanity checks
 	size := len(input)
 	if size == 0 {
@@ -131,7 +131,7 @@ func getNonResidentDataAttribute(input []byte, bytesPerCluster int64) (NonReside
 }
 
 // Parse parses the raw data run receiver and returns data runs. The input per cluster argument is used to calculate data run information.
-func getDataRuns(input []byte, bytesPerCluster int64) (DataRuns, error) {
+func getDataRuns(input []byte, bytesPerCluster uint) (DataRuns, error) {
 	// Sanity checks
 	size := len(input)
 	if size == 0 {
@@ -188,10 +188,10 @@ func getDataRuns(input []byte, bytesPerCluster int64) (DataRuns, error) {
 	// Resolve Data Runs
 	dataRunOffset := int64(0)
 	for i := 0; i < len(UnresolvedDataRuns); i++ {
-		dataRunOffset = dataRunOffset + (UnresolvedDataRuns[i].clusterOffset * bytesPerCluster)
+		dataRunOffset = dataRunOffset + (UnresolvedDataRuns[i].clusterOffset * int64(bytesPerCluster))
 		dataRuns[i] = DataRun{
 			AbsoluteOffset: dataRunOffset,
-			Length:         UnresolvedDataRuns[i].numberOfClusters * bytesPerCluster,
+			Length:         UnresolvedDataRuns[i].numberOfClusters * int64(bytesPerCluster),
 		}
 	}
 

@@ -14,12 +14,12 @@ import (
 // VolumeBootRecord contains relevant data about an NTFS volume
 type VolumeBootRecord struct {
 	VolumeLetter           string
-	BytesPerSector         int64
-	SectorsPerCluster      int64
-	BytesPerCluster        int64
+	BytesPerSector         uint
+	SectorsPerCluster      uint8
+	BytesPerCluster        uint
 	MftByteOffset          int64
-	MftRecordSize          int64
-	ClustersPerIndexRecord int64
+	MftRecordSize          uint
+	ClustersPerIndexRecord uint8
 }
 
 var (
@@ -52,10 +52,10 @@ func Parse(input []byte) (vbr VolumeBootRecord, err error) {
 
 	// Pull out data based on pre-defined offsets in the VBR
 	buffer, err = byteshelper.GetValue(input, bytesPerSectorLocation)
-	vbr.BytesPerSector = int64(binary.LittleEndian.Uint16(buffer))
+	vbr.BytesPerSector = uint(binary.LittleEndian.Uint16(buffer))
 
 	buffer, err = byteshelper.GetValue(input, sectorsPerClusterLocation)
-	vbr.SectorsPerCluster = int64(buffer[0])
+	vbr.SectorsPerCluster = buffer[0]
 
 	buffer, err = byteshelper.GetValue(input, clustersPerMftRecordLocation)
 	clustersPerMFTRecord := int(buffer[0])
@@ -63,8 +63,8 @@ func Parse(input []byte) (vbr VolumeBootRecord, err error) {
 		return VolumeBootRecord{}, fmt.Errorf("found the clusters per MFT record is %d, which is less than 128", clustersPerMFTRecord)
 	}
 	signedTwosComplement := int8(buffer[0]) * -1
-	vbr.MftRecordSize = int64(math.Pow(2, float64(signedTwosComplement)))
-	vbr.BytesPerCluster = vbr.SectorsPerCluster * vbr.BytesPerSector
+	vbr.MftRecordSize = uint(math.Pow(2, float64(signedTwosComplement)))
+	vbr.BytesPerCluster = uint(vbr.SectorsPerCluster) * vbr.BytesPerSector
 
 	buffer, err = byteshelper.GetValue(input, clustersPerOffsetLocation)
 	var mftClusterOffset int64
@@ -72,10 +72,10 @@ func Parse(input []byte) (vbr VolumeBootRecord, err error) {
 	if mftClusterOffset == 0 {
 		return VolumeBootRecord{}, fmt.Errorf("failed to get mft offset clusters: %w", err)
 	}
-	vbr.MftByteOffset = mftClusterOffset * vbr.BytesPerCluster
+	vbr.MftByteOffset = mftClusterOffset * int64(vbr.BytesPerCluster)
 
 	buffer, err = byteshelper.GetValue(input, clustersPerIndexRecord)
-	vbr.ClustersPerIndexRecord = int64(buffer[0])
+	vbr.ClustersPerIndexRecord = buffer[0]
 
 	return vbr, nil
 }

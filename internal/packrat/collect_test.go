@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package collector
+package packrat
 
 //func TestCollect(t *testing.T) {
 //	type args struct {

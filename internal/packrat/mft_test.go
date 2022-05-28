@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package collector
+package packrat
 
 import (
 	"github.com/google/go-cmp/cmp"
@@ -20,19 +20,19 @@ func Test_parseMFTRecord0(t *testing.T) {
 	tests := []struct {
 		name           string
 		args           args
-		wantMftRecord0 mft.MasterFileTableRecord
+		wantMftRecord0 mft.Record
 		wantErr        bool
 	}{
 		{
 			name:    "test1",
 			wantErr: false,
-			wantMftRecord0: mft.MasterFileTableRecord{
-				RecordHeader: mft.RecordHeader{
+			wantMftRecord0: mft.Record{
+				Header: mft.RecordHeader{
 					AttributesOffset: 56,
 					RecordNumber:     0,
-					Flags: mft.RecordHeaderFlags{
-						FlagDeleted:   false,
-						FlagDirectory: false,
+					Flags: mft.Flags{
+						Deleted:   false,
+						Directory: false,
 					},
 				},
 				StandardInformationAttributes: mft.StandardInformationAttribute{
@@ -113,7 +113,7 @@ func Test_parseMFTRecord0(t *testing.T) {
 				return
 			}
 			defer tt.args.dummyHandler.handle.Close()
-			var gotMftRecord0 mft.MasterFileTableRecord
+			var gotMftRecord0 mft.Record
 			gotMftRecord0, err = parseMFTRecord0(tt.args.dummyHandler)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseMFTRecord0() error = %v, wantErr %v", err, tt.wantErr)

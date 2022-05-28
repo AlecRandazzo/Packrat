@@ -5,7 +5,7 @@ package main
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/AlecRandazzo/Packrat/internal/collector"
+	"github.com/AlecRandazzo/Packrat/internal/packrat"
 	"github.com/alecthomas/kong"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -21,8 +21,15 @@ var CLI struct {
 		Debug    bool   `short:"d" optional:"" help:"Debug mode"`
 	} `cmd help:"Collect forensic data."`
 	Parse struct {
+		Mft    string `arg:"" short:"m" help:"Mft File"`
+		Output string `arg:"" short:"o" help:"Output csv"`
 	} `cmd help:"Parse forensic data."`
 }
+
+const (
+	defaultBytesPerSector  = 512
+	defaultBytesPerCluster = 4096
+)
 
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
@@ -43,7 +50,7 @@ func main() {
 		}
 
 		systemDrive := os.Getenv("SYSTEMDRIVE")
-		exportList := collector.FileExportList{
+		exportList := packrat.FileExportList{
 			{
 				FullPath:      fmt.Sprintf(`%s\$MFT`, systemDrive),
 				FullPathRegex: false,
@@ -102,15 +109,25 @@ func main() {
 		defer fileHandle.Close()
 
 		zipWriter := zip.NewWriter(fileHandle)
-		//resultWriter := collector.ZipResultWriter{
+		//resultWriter := packrat.ZipResultWriter{
 		//	ZipWriter:  zipWriter,
 		//	FileHandle: fileHandle,
 		//}
 		defer zipWriter.Close()
-		volumeHandler := collector.NewVolumeHandler(strings.Trim(os.Getenv("SYSTEMDRIVE"), ":"))
-		err = collector.Collect(volumeHandler, exportList, zipWriter)
+		volumeHandler := packrat.NewVolumeHandler(strings.Trim(os.Getenv("SYSTEMDRIVE"), ":"))
+		err = packrat.Collect(volumeHandler, exportList, zipWriter, defaultBytesPerSector)
 		if err != nil {
 			log.Panic(err)
+		}
+	case "parse <mft>":
+		writer, err := packrat.NewCsvWriter(CLI.Parse.Output)
+		if err != nil {
+			panic(err)
+		}
+
+		err = packrat.Parse(CLI.Parse.Mft, writer, defaultBytesPerSector, defaultBytesPerCluster)
+		if err != nil {
+			panic(err)
 		}
 	default:
 		ctx.Command()

@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package collector
+package packrat
 
 import (
 	"errors"
@@ -60,7 +60,7 @@ func checkForPossibleMatch(listOfSearchKeywords searchTermsList, fileNameAttribu
 	return mft.FileNameAttribute{}, errors.New("no match")
 }
 
-func findPossibleMatches(handler handler, listOfSearchKeywords searchTermsList) (possibleMatches, mft.DirectoryTree, error) {
+func findPossibleMatches(handler handler, listOfSearchKeywords searchTermsList, bytesPerSector uint) (possibleMatches, mft.DirectoryTree, error) {
 	log.Debugf("Starting to scan the MFT's dataruns to create a tree of directories and to search for the for the following search terms: %+v", listOfSearchKeywords)
 
 	// Init memory
@@ -85,7 +85,7 @@ func findPossibleMatches(handler handler, listOfSearchKeywords searchTermsList) 
 
 		err = mft.ValidateDirectory(buffer)
 		if err == nil {
-			unresolvedDirectory, _ := mft.ConvertRawMFTRecordToDirectory(buffer)
+			unresolvedDirectory, _ := mft.ConvertRawMFTRecordToDirectory(buffer, bytesPerSector)
 			unresolvedDirectorTree[unresolvedDirectory.RecordNumber] = unresolvedDirectory
 			recordOffsetTracker[unresolvedDirectory.RecordNumber] = handler.LastOffset()
 		} else {
@@ -137,7 +137,7 @@ func findPossibleMatches(handler handler, listOfSearchKeywords searchTermsList) 
 					_, _ = newVolumeHandle.Handle().Seek(absoluteVolumeOffset, 0)
 					buffer := make([]byte, handler.Vbr().BytesPerCluster)
 					_, _ = newVolumeHandle.Handle().Read(buffer)
-					mftRecord, _ := mft.ParseMftRecord(buffer, handler.Vbr().BytesPerCluster)
+					mftRecord, _ := mft.ParseRecord(buffer, handler.Vbr().BytesPerSector, handler.Vbr().BytesPerCluster)
 					log.Debugf("Went to absolute offset %d to get a non resident data attribute with record number %d. Parsed the record for the values %+v. Raw hex: %x", absoluteVolumeOffset, nonResidentRecordNumber, mftRecord, buffer)
 					tempDataRunCounter := 0
 					numberOfDataRuns := len(mftRecord.DataAttribute.NonResidentDataAttribute.DataRuns)

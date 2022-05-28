@@ -11,7 +11,7 @@ import (
 func Test_getDataAttribute(t *testing.T) {
 	type args struct {
 		input           []byte
-		bytesPerCluster int64
+		bytesPerCluster uint
 	}
 	tests := []struct {
 		name    string
@@ -122,7 +122,7 @@ func Test_getDataAttribute(t *testing.T) {
 func Test_getDataRuns(t *testing.T) {
 	type args struct {
 		input           []byte
-		bytesPerCluster int64
+		bytesPerCluster uint
 	}
 	tests := []struct {
 		name    string
@@ -191,7 +191,7 @@ func Test_getDataRuns(t *testing.T) {
 func Test_getNonResidentDataAttribute(t *testing.T) {
 	type args struct {
 		input           []byte
-		bytesPerCluster int64
+		bytesPerCluster uint
 	}
 	tests := []struct {
 		name    string

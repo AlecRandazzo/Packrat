@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package collector
+package packrat
 
 import (
 	"github.com/google/go-cmp/cmp"
@@ -352,6 +352,7 @@ func Test_findPossibleMatches(t *testing.T) {
 	type args struct {
 		dummyHandler         *dummyHandler
 		listOfSearchKeywords searchTermsList
+		bytesPerSector       uint
 	}
 	tests := []struct {
 		name                      string
@@ -386,6 +387,7 @@ func Test_findPossibleMatches(t *testing.T) {
 						fileNameRegex:  nil,
 					},
 				},
+				bytesPerSector: 512,
 			},
 			wantErr: false,
 			wantDirectoryTree: mft.DirectoryTree{
@@ -493,7 +495,7 @@ func Test_findPossibleMatches(t *testing.T) {
 			tt.args.dummyHandler.UpdateReader(rawFileReader(tt.args.dummyHandler, foundFile))
 			var gotListOfPossibleMatches possibleMatches
 			var gotDirectoryTree mft.DirectoryTree
-			gotListOfPossibleMatches, gotDirectoryTree, err = findPossibleMatches(tt.args.dummyHandler, tt.args.listOfSearchKeywords)
+			gotListOfPossibleMatches, gotDirectoryTree, err = findPossibleMatches(tt.args.dummyHandler, tt.args.listOfSearchKeywords, tt.args.bytesPerSector)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("findPossibleMatches() error = %v, wantErr %v", err, tt.wantErr)
 				return

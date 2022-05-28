@@ -1,5 +1,5 @@
 windows:
-		go build -ldflags="-s -w" -o packrat.exe -v ./cmd/windows/main.go
+		go build -ldflags="-s -w" -o packrat.exe -v ./cmd/main.go
 
 .PHONY:test
 test:

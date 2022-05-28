@@ -18,14 +18,14 @@ func Test_validateAttribute(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Header 0x10",
+			name: "RecordHeader 0x10",
 			args: args{
 				attributeHeaderToCheck: 0x10,
 			},
 			wantErr: false,
 		},
 		{
-			name: "Header 0x11",
+			name: "RecordHeader 0x11",
 			args: args{
 				attributeHeaderToCheck: 0x11,
 			},
@@ -43,7 +43,7 @@ func Test_validateAttribute(t *testing.T) {
 
 func Test_getAttributes(t *testing.T) {
 	type args struct {
-		bytesPerCluster int64
+		bytesPerCluster uint
 	}
 	tests := []struct {
 		name                             string
@@ -308,7 +308,7 @@ func Test_getRawAttributes(t *testing.T) {
 			args: args{recordHeader: RecordHeader{
 				AttributesOffset: 0x38,
 				RecordNumber:     0,
-				Flags:            RecordHeaderFlags{},
+				Flags:            Flags{},
 			}},
 			wantErr: false,
 			wantRawAttributes: [][]byte{
@@ -329,7 +329,7 @@ func Test_getRawAttributes(t *testing.T) {
 			args: args{recordHeader: RecordHeader{
 				AttributesOffset: 0,
 				RecordNumber:     0,
-				Flags:            RecordHeaderFlags{},
+				Flags:            Flags{},
 			}},
 			wantErr: true,
 		},
@@ -339,7 +339,7 @@ func Test_getRawAttributes(t *testing.T) {
 			args: args{recordHeader: RecordHeader{
 				AttributesOffset: 255,
 				RecordNumber:     0,
-				Flags:            RecordHeaderFlags{},
+				Flags:            Flags{},
 			}},
 		},
 	}

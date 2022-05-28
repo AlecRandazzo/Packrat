@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package collector
+package packrat
 
 import (
 	"archive/zip"
@@ -13,7 +13,7 @@ import (
 )
 
 // Collect will find and collect target files into a format depending on the resultWriter type
-func Collect(handler handler, exportList FileExportList, zipFile *zip.Writer) error {
+func Collect(handler handler, exportList FileExportList, zipFile *zip.Writer, bytesPerSector uint) error {
 	// volumeHandler as an arg is a dependency injection
 	log.Debugf("Attempting to acquire the following files %+v", exportList)
 
@@ -30,7 +30,7 @@ func Collect(handler handler, exportList FileExportList, zipFile *zip.Writer) er
 	defer handler.Handle().Close()
 
 	var foundFiles foundFiles
-	foundFiles, err = findFiles(handler, searchTerms)
+	foundFiles, err = findFiles(handler, searchTerms, bytesPerSector)
 	if err != nil {
 		return fmt.Errorf("findFiles() failed to find files: %w", err)
 	}
@@ -40,7 +40,7 @@ func Collect(handler handler, exportList FileExportList, zipFile *zip.Writer) er
 	return nil
 }
 
-func findFiles(handler handler, listOfSearchKeywords searchTermsList) (foundFiles, error) {
+func findFiles(handler handler, listOfSearchKeywords searchTermsList, bytesPerSector uint) (foundFiles, error) {
 	foundFiles := make(foundFiles, 0)
 
 	// parse the mft's mft record to get its dataruns
@@ -63,7 +63,7 @@ func findFiles(handler handler, listOfSearchKeywords searchTermsList) (foundFile
 	handler.UpdateReader(mftReader)
 	directoryTree := mft.DirectoryTree{}
 	possibleMatches := possibleMatches{}
-	possibleMatches, directoryTree, err = findPossibleMatches(handler, listOfSearchKeywords)
+	possibleMatches, directoryTree, err = findPossibleMatches(handler, listOfSearchKeywords, bytesPerSector)
 	if err != nil {
 		err = fmt.Errorf("findPossibleMatches() failed: %w", err)
 		return nil, err

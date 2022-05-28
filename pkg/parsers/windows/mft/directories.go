@@ -47,11 +47,16 @@ func ValidateDirectory(input []byte) error {
 }
 
 // ConvertRawMFTRecordToDirectory will take a raw MFT record that is a directory and return the parsed MFT record for it.
-func ConvertRawMFTRecordToDirectory(input []byte) (UnResolvedDirectory, error) {
+func ConvertRawMFTRecordToDirectory(input []byte, bytesPerSector uint) (UnResolvedDirectory, error) {
 	// Sanity checks that the raw mft record is a directory or not
 	err := ValidateDirectory(input)
 	if err != nil {
 		return UnResolvedDirectory{}, errors.New("this is not a directory")
+	}
+
+	err = fixup(input, bytesPerSector)
+	if err != nil {
+		return UnResolvedDirectory{}, fmt.Errorf("failed to fixup record: %w", err)
 	}
 
 	// Parse the raw record header
@@ -88,7 +93,7 @@ func ConvertRawMFTRecordToDirectory(input []byte) (UnResolvedDirectory, error) {
 }
 
 // BuildUnresolvedDirectoryTree takes an MFT and does a first pass to find all the directories listed in it. These will form an unresolved UnResolvedDirectory tree that need to be stitched together.
-func BuildUnresolvedDirectoryTree(reader io.Reader) (UnresolvedDirectoryTree, error) {
+func BuildUnresolvedDirectoryTree(reader io.Reader, bytesPerSector uint) (UnresolvedDirectoryTree, error) {
 	tree := make(UnresolvedDirectoryTree)
 	for {
 		buffer := make([]byte, 1024)
@@ -99,7 +104,7 @@ func BuildUnresolvedDirectoryTree(reader io.Reader) (UnresolvedDirectoryTree, er
 		}
 
 		var directory UnResolvedDirectory
-		directory, err = ConvertRawMFTRecordToDirectory(buffer)
+		directory, err = ConvertRawMFTRecordToDirectory(buffer, bytesPerSector)
 		if err != nil {
 			continue
 		}
@@ -148,13 +153,13 @@ func (unresolvedDirectoryTree UnresolvedDirectoryTree) Resolve(volumeLetter stri
 }
 
 // BuildDirectoryTree takes an MFT and creates a directory tree where the slice keys are the mft record number of the UnResolvedDirectory.
-func BuildDirectoryTree(reader io.Reader, volumeLetter string) (DirectoryTree, error) {
+func BuildDirectoryTree(reader io.Reader, volumeLetter string, bytesPerSector uint) (DirectoryTree, error) {
 	err := checkVolumeLetter(volumeLetter)
 	if err != nil {
 		return DirectoryTree{}, fmt.Errorf("failed to build directory tree due to invalid volume letter: %w", err)
 	}
 	directoryTree := make(DirectoryTree)
-	unresolvedDirectoryTree, _ := BuildUnresolvedDirectoryTree(reader)
+	unresolvedDirectoryTree, _ := BuildUnresolvedDirectoryTree(reader, bytesPerSector)
 	directoryTree, _ = unresolvedDirectoryTree.Resolve(volumeLetter)
 	return directoryTree, nil
 }

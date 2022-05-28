@@ -46,7 +46,7 @@ var validAttributeTypes = []byte{
 }
 
 // GetAttributes parses a slice of raw attributes and returns its filename, standard information, and dat attributes. It takes an argument for input per cluster (typically 4096) which is used for computing data run information in a data attributes.
-func GetAttributes(input [][]byte, bytesPerCluster int64) (FileNameAttributes, StandardInformationAttribute, DataAttribute, AttributeListAttributes, error) {
+func GetAttributes(input [][]byte, bytesPerCluster uint) (FileNameAttributes, StandardInformationAttribute, DataAttribute, AttributeListAttributes, error) {
 	// Sanity checks
 	size := len(input)
 	if size == 0 {
@@ -135,7 +135,7 @@ const (
 	lengthAttributeSize = 0x04
 )
 
-// GetRawAttributes returns the attribute input from an unparsed mft record which is the method receiver. It takes recordHeader as an argument since the record header contains the offset for the start of the attributes.
+// GetRawAttributes returns the attribute from an unparsed mft record. It takes recordHeader as an argument since the record header contains the offset for the start of the attributes.
 func GetRawAttributes(input []byte, recordHeader RecordHeader) (rawAttributes [][]byte, err error) {
 	// sanity checks
 	size := len(input)

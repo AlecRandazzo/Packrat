@@ -8,40 +8,40 @@ import (
 	"testing"
 )
 
-func Test_getRecordHeaderFlags(t *testing.T) {
+func Test_getHeaderFlags(t *testing.T) {
 	tests := []struct {
 		name  string
-		want  RecordHeaderFlags
+		want  Flags
 		input byte
 	}{
 		{
 			name:  "deleted file 0x00",
 			input: 0x00,
-			want: RecordHeaderFlags{
-				FlagDeleted:   true,
-				FlagDirectory: false,
+			want: Flags{
+				Deleted:   true,
+				Directory: false,
 			},
 		},
 		{
 			name:  "directory 0x03",
 			input: 0x03,
-			want: RecordHeaderFlags{
-				FlagDeleted:   false,
-				FlagDirectory: true,
+			want: Flags{
+				Deleted:   false,
+				Directory: true,
 			},
 		},
 		{
 			name:  "other 0x06",
 			input: 0x06,
-			want: RecordHeaderFlags{
-				FlagDeleted:   false,
-				FlagDirectory: false,
+			want: Flags{
+				Deleted:   false,
+				Directory: false,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getRecordHeaderFlags(tt.input)
+			got := getHeaderFlags(tt.input)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf(cmp.Diff(got, tt.want))
 			}
@@ -49,7 +49,7 @@ func Test_getRecordHeaderFlags(t *testing.T) {
 	}
 }
 
-func Test_getRecordHeaders(t *testing.T) {
+func Test_GetRecordHeaders(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   []byte
@@ -62,9 +62,9 @@ func Test_getRecordHeaders(t *testing.T) {
 			want: RecordHeader{
 				AttributesOffset: 56,
 				RecordNumber:     0,
-				Flags: RecordHeaderFlags{
-					FlagDeleted:   false,
-					FlagDirectory: false,
+				Flags: Flags{
+					Deleted:   false,
+					Directory: false,
 				},
 			},
 			wantErr: false,
@@ -84,13 +84,13 @@ func Test_getRecordHeaders(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := GetRecordHeaders(tt.input)
 			if !reflect.DeepEqual(got, tt.want) || (err != nil) != tt.wantErr {
-				t.Errorf(cmp.Diff(got, tt.want))
+				t.Errorf(cmp.Diff(tt.want, got))
 			}
 		})
 	}
 }
 
-func TestRawMasterFileTableRecord_IsThisAnMftRecord(t *testing.T) {
+func Test_ValidateMftRecordBytes(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   []byte
