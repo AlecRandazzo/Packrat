@@ -17,7 +17,7 @@ type VolumeBootRecord struct {
 	BytesPerSector         uint
 	SectorsPerCluster      uint8
 	BytesPerCluster        uint
-	MftByteOffset          int64
+	MftOffset              int64
 	MftRecordSize          uint
 	ClustersPerIndexRecord uint8
 }
@@ -28,7 +28,7 @@ var (
 	bytesPerSectorLocation       = byteshelper.NewDataLocation(0x0B, 0x02)
 	sectorsPerClusterLocation    = byteshelper.NewDataLocation(0x0D, 0x01)
 	clustersPerMftRecordLocation = byteshelper.NewDataLocation(0x40, 0x01)
-	clustersPerOffsetLocation    = byteshelper.NewDataLocation(0x30, 0x08)
+	mftClusterOffsetLocation     = byteshelper.NewDataLocation(0x30, 0x08)
 	clustersPerIndexRecord       = byteshelper.NewDataLocation(0x44, 0x01)
 )
 
@@ -66,13 +66,13 @@ func Parse(input []byte) (vbr VolumeBootRecord, err error) {
 	vbr.MftRecordSize = uint(math.Pow(2, float64(signedTwosComplement)))
 	vbr.BytesPerCluster = uint(vbr.SectorsPerCluster) * vbr.BytesPerSector
 
-	buffer, err = byteshelper.GetValue(input, clustersPerOffsetLocation)
+	buffer, err = byteshelper.GetValue(input, mftClusterOffsetLocation)
 	var mftClusterOffset int64
 	mftClusterOffset, err = byteshelper.LittleEndianBinaryToInt64(buffer)
 	if mftClusterOffset == 0 {
 		return VolumeBootRecord{}, fmt.Errorf("failed to get mft offset clusters: %w", err)
 	}
-	vbr.MftByteOffset = mftClusterOffset * int64(vbr.BytesPerCluster)
+	vbr.MftOffset = mftClusterOffset * int64(vbr.BytesPerCluster)
 
 	buffer, err = byteshelper.GetValue(input, clustersPerIndexRecord)
 	vbr.ClustersPerIndexRecord = buffer[0]

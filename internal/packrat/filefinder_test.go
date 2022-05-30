@@ -486,7 +486,7 @@ func Test_findPossibleMatches(t *testing.T) {
 			defer tt.args.dummyHandler.Handle().Close()
 
 			mftRecord0, _ := parseMFTRecord0(tt.args.dummyHandler)
-			_, _ = tt.args.dummyHandler.handle.Seek(tt.args.dummyHandler.vbr.MftByteOffset, 0)
+			_, _ = tt.args.dummyHandler.handle.Seek(tt.args.dummyHandler.vbr.MftOffset, 0)
 
 			foundFile := foundFile{
 				dataRuns: mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns,

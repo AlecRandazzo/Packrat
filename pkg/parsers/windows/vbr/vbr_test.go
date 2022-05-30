@@ -22,7 +22,7 @@ func TestParse(t *testing.T) {
 				BytesPerCluster:        4096,
 				SectorsPerCluster:      8,
 				MftRecordSize:          1024,
-				MftByteOffset:          3221225472,
+				MftOffset:              3221225472,
 				ClustersPerIndexRecord: 1,
 			},
 			wantErr: false,

@@ -18,7 +18,7 @@ func parseMFTRecord0(handler handler) (mft.Record, error) {
 	}
 
 	// Seek to the offset where the MFT starts. If it errors, bomb.
-	_, err = handler.Handle().Seek(handler.Vbr().MftByteOffset, 0)
+	_, err = handler.Handle().Seek(handler.Vbr().MftOffset, 0)
 	if err != nil {
 		return mft.Record{}, fmt.Errorf("failed to seek to mft: %w", err)
 	}

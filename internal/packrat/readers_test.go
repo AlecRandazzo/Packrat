@@ -46,7 +46,7 @@ func TestDataRunsReader_Read(t *testing.T) {
 					BytesPerSector:         0,
 					SectorsPerCluster:      0,
 					BytesPerCluster:        0,
-					MftByteOffset:          0,
+					MftOffset:              0,
 					MftRecordSize:          0,
 					ClustersPerIndexRecord: 0,
 				},

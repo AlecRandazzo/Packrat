@@ -56,7 +56,7 @@ func findFiles(handler handler, listOfSearchKeywords searchTermsList, bytesPerSe
 		dataRuns: mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns,
 		fullPath: fmt.Sprintf(`%s:\$mft`, handler.VolumeLetter()),
 	}
-	handler.Handle().Seek(handler.Vbr().MftByteOffset, 0)
+	handler.Handle().Seek(handler.Vbr().MftOffset, 0)
 	mftReader := rawFileReader(handler, foundFile)
 	log.Debug("Obtained a io.Reader to the MFT's dataruns.")
 
