@@ -96,13 +96,13 @@ func getFileNameAttribute(input []byte) (FileNameAttribute, error) {
 	}
 
 	buffer, _ = byteshelper.GetValue(input, fnAttributeSizeLocation)
-	fn.AttributeSize, _ = byteshelper.LittleEndianBinaryToUInt32(buffer)
+	fn.AttributeSize = binary.LittleEndian.Uint32(buffer)
 
 	buffer, _ = byteshelper.GetValue(input, fnParentRecordNumberLocation)
-	fn.ParentDirRecordNumber, _ = byteshelper.LittleEndianBinaryToUInt32(buffer)
+	fn.ParentDirRecordNumber = binary.LittleEndian.Uint32(buffer)
 
 	buffer, _ = byteshelper.GetValue(input, fnParentDirSequenceNumberLocation)
-	fn.ParentDirSequenceNumber, _ = byteshelper.LittleEndianBinaryToUInt16(buffer)
+	fn.ParentDirSequenceNumber = binary.LittleEndian.Uint16(buffer)
 
 	buffer, _ = byteshelper.GetValue(input, fnCreatedLocation)
 	fn.Created, _ = timestamp.Parse(buffer)

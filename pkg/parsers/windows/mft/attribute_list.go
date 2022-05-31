@@ -3,6 +3,7 @@
 package mft
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -47,7 +48,7 @@ func getAttributeListAttribute(input []byte) (AttributeListAttributes, error) {
 	}
 
 	buffer, _ = byteshelper.GetValue(input, attributeListRecordLengthLocation)
-	recordLength, _ := byteshelper.LittleEndianBinaryToUInt16(buffer)
+	recordLength := binary.LittleEndian.Uint16(buffer)
 	if int(recordLength) != size {
 		return AttributeListAttributes{}, fmt.Errorf("received a byte slice thats not equal to the expected attribute length. Size received was %d but expected %d", size, recordLength)
 	}
@@ -61,9 +62,9 @@ func getAttributeListAttribute(input []byte) (AttributeListAttributes, error) {
 			return attributeList, nil
 		}
 
-		sizeOfSubAttribute, _ := byteshelper.LittleEndianBinaryToUInt16(input[pointerToSubAttribute+offsetRecordLength : pointerToSubAttribute+offsetRecordLength+lengthRecordLength])
+		sizeOfSubAttribute := binary.LittleEndian.Uint16(input[pointerToSubAttribute+offsetRecordLength : pointerToSubAttribute+offsetRecordLength+lengthRecordLength])
 
-		recordNumber, _ := byteshelper.LittleEndianBinaryToUInt32(input[pointerToSubAttribute+offsetMFTReferenceRecordNumber : pointerToSubAttribute+offsetMFTReferenceRecordNumber+lengthMFTReferenceRecordNumber])
+		recordNumber := binary.LittleEndian.Uint32(input[pointerToSubAttribute+offsetMFTReferenceRecordNumber : pointerToSubAttribute+offsetMFTReferenceRecordNumber+lengthMFTReferenceRecordNumber])
 		attributeListAttribute := AttributeListAttribute{
 			Type:                     input[pointerToSubAttribute],
 			MFTReferenceRecordNumber: recordNumber,

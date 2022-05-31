@@ -109,25 +109,6 @@ func LittleEndianBinaryToInt16(inBytes []byte) (int16, error) {
 	return int16(binary.LittleEndian.Uint16(inBytes)), nil
 }
 
-// LittleEndianBinaryToUInt16 converts a little endian byte slice to uint16.
-func LittleEndianBinaryToUInt16(inBytes []byte) (outUInt16 uint16, err error) {
-	inBytesLength := len(inBytes)
-	if inBytesLength != 2 {
-		return 0, fmt.Errorf("LittleEndianBinaryToUInt16() received %d bytes but expected 2 bytes", inBytesLength)
-
-	}
-	return binary.LittleEndian.Uint16(inBytes), nil
-}
-
-// LittleEndianBinaryToUInt32 converts a little endian byte slice to uint32.
-func LittleEndianBinaryToUInt32(inBytes []byte) (outUInt32 uint32, err error) {
-	inBytesLength := len(inBytes)
-	if inBytesLength != 4 {
-		return 0, fmt.Errorf("LittleEndianBinaryToUInt32() received %d bytes but expected 4 bytes", inBytesLength)
-	}
-	return binary.LittleEndian.Uint32(inBytes), nil
-}
-
 // UnicodeBytesToASCII converts a byte slice of unicode characters to ASCII
 func UnicodeBytesToASCII(unicodeBytes []byte) (asciiString string, err error) {
 	inBytesLength := len(unicodeBytes)

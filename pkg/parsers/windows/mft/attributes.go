@@ -148,7 +148,7 @@ func GetRawAttributes(input []byte, recordHeader RecordHeader) (rawAttributes []
 
 	// Init variable that tracks how far to the next Attribute
 	var distanceToNextAttribute uint16
-	offset := recordHeader.AttributesOffset
+	offset := uint16(recordHeader.AttributesOffset)
 
 	for {
 		// Calculate offset to next Attribute

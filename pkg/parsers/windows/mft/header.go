@@ -4,6 +4,7 @@ package mft
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -12,7 +13,7 @@ import (
 
 // RecordHeader contains parsed record header values.
 type RecordHeader struct {
-	AttributesOffset uint16
+	AttributesOffset uint8
 	RecordNumber     uint32
 	Flags            Flags
 }
@@ -44,13 +45,13 @@ func GetRecordHeaders(input []byte) (RecordHeader, error) {
 
 	// get data
 	buffer, _ := byteshelper.GetValue(input, headerAttributeOffsetLocation)
-	header.AttributesOffset = uint16(buffer[0])
+	header.AttributesOffset = buffer[0]
 
 	buffer, _ = byteshelper.GetValue(input, headerFlagLocation)
 	header.Flags = getHeaderFlags(buffer[0])
 
 	buffer, _ = byteshelper.GetValue(input, headerRecordNumberLocation)
-	header.RecordNumber, _ = byteshelper.LittleEndianBinaryToUInt32(buffer)
+	header.RecordNumber = binary.LittleEndian.Uint32(buffer)
 
 	return header, nil
 }

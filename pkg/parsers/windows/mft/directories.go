@@ -92,8 +92,8 @@ func ConvertRawMFTRecordToDirectory(input []byte, bytesPerSector uint) (UnResolv
 	return directory, nil
 }
 
-// BuildUnresolvedDirectoryTree takes an MFT and does a first pass to find all the directories listed in it. These will form an unresolved UnResolvedDirectory tree that need to be stitched together.
-func BuildUnresolvedDirectoryTree(reader io.Reader, bytesPerSector uint) (UnresolvedDirectoryTree, error) {
+// buildUnresolvedDirectoryTree takes an MFT and does a first pass to find all the directories listed in it. These will form an unresolved UnResolvedDirectory tree that need to be stitched together.
+func buildUnresolvedDirectoryTree(reader io.Reader, bytesPerSector uint) (UnresolvedDirectoryTree, error) {
 	tree := make(UnresolvedDirectoryTree)
 	for {
 		buffer := make([]byte, 1024)
@@ -159,7 +159,7 @@ func BuildDirectoryTree(reader io.Reader, volumeLetter string, bytesPerSector ui
 		return DirectoryTree{}, fmt.Errorf("failed to build directory tree due to invalid volume letter: %w", err)
 	}
 	directoryTree := make(DirectoryTree)
-	unresolvedDirectoryTree, _ := BuildUnresolvedDirectoryTree(reader, bytesPerSector)
+	unresolvedDirectoryTree, _ := buildUnresolvedDirectoryTree(reader, bytesPerSector)
 	directoryTree, _ = unresolvedDirectoryTree.Resolve(volumeLetter)
 	return directoryTree, nil
 }

@@ -150,13 +150,13 @@ func Test_BuildUnresolvedDirectoryTree(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotUnresolvedDirectoryTree, err := BuildUnresolvedDirectoryTree(tt.args.reader, tt.args.bytesPerSector)
+			gotUnresolvedDirectoryTree, err := buildUnresolvedDirectoryTree(tt.args.reader, tt.args.bytesPerSector)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("BuildUnresolvedDirectoryTree() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("buildUnresolvedDirectoryTree() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotUnresolvedDirectoryTree, tt.wantUnresolvedDirectoryTree) {
-				t.Errorf("BuildUnresolvedDirectoryTree() gotUnresolvedDirectoryTree = %v, want %v", gotUnresolvedDirectoryTree, tt.wantUnresolvedDirectoryTree)
+				t.Errorf("buildUnresolvedDirectoryTree() gotUnresolvedDirectoryTree = %v, want %v", gotUnresolvedDirectoryTree, tt.wantUnresolvedDirectoryTree)
 			}
 		})
 	}
