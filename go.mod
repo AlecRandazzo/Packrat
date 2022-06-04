@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/google/go-cmp v0.5.6
 	github.com/sirupsen/logrus v1.5.0
-	golang.org/x/sys v0.0.0-20200501145240-bc7a7d42d5c3
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
 )
 
 require github.com/alecthomas/kong v0.3.0

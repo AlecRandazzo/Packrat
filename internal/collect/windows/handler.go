@@ -1,6 +1,8 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package packrat
+//go:build windows
+
+package windows
 
 import (
 	"fmt"

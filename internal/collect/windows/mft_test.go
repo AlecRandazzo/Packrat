@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package packrat
+package windows
 
 import (
 	"github.com/google/go-cmp/cmp"
@@ -101,7 +101,7 @@ func Test_parseMFTRecord0(t *testing.T) {
 				vbr:          vbr.VolumeBootRecord{},
 				reader:       nil,
 				lastOffset:   0,
-				filePath:     filepath.FromSlash("../../test/testdata/dummyntfs"),
+				filePath:     filepath.FromSlash("../../../test/testdata/dummyntfs"),
 			}},
 		},
 	}

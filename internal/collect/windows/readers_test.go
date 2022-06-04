@@ -1,6 +1,6 @@
 // Copyright (c) 2020 Alec Randazzo
 
-package packrat
+package windows
 
 import (
 	"path/filepath"
@@ -52,7 +52,7 @@ func TestDataRunsReader_Read(t *testing.T) {
 				},
 				reader:     nil,
 				lastOffset: 0,
-				filePath:   filepath.FromSlash("../../test/testdata/dummyntfs"),
+				filePath:   filepath.FromSlash("../../../test/testdata/dummyntfs"),
 			},
 			fields: fields{
 				VolumeHandler: &VolumeHandler{},
@@ -129,7 +129,7 @@ func Test_apiFileReader(t *testing.T) {
 			name: "found file",
 			args: args{file: foundFile{
 				dataRuns: nil,
-				fullPath: filepath.FromSlash("../../test/testdata/dummyntfs"),
+				fullPath: filepath.FromSlash("../../../test/testdata/dummyntfs"),
 				fileSize: 0,
 			}},
 			wantErr: false,
