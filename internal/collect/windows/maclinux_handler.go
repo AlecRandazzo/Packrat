@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Alec Randazzo
+// Copyright (c) 2022 Alec Randazzo
 
 // This is a dummy file that exist purely so we can run tests on mac and linux systems
 
