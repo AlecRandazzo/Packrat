@@ -5,13 +5,15 @@ package main
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/AlecRandazzo/Packrat/internal/collect/windows"
-	"github.com/AlecRandazzo/Packrat/internal/parse"
-	"github.com/alecthomas/kong"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"runtime"
 	"time"
+
+	"github.com/alecthomas/kong"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/AlecRandazzo/Packrat/internal/collect/windows"
+	"github.com/AlecRandazzo/Packrat/internal/parse"
 )
 
 var CLI struct {
