@@ -7,15 +7,18 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/mft"
 )
 
 // Collect will find and collect target files into a format depending on the resultWriter type
-func Collect(handler handler, exportList FileExportList, zipFile *zip.Writer, bytesPerSector uint) error {
+func Collect(exportList FileExportList, zipFile *zip.Writer) error {
 	// volumeHandler as an arg is a dependency injection
 	log.Debugf("Attempting to acquire the following files %+v", exportList)
+
+	handler := NewVolumeHandler(strings.Trim(os.Getenv("SYSTEMDRIVE"), ":"))
 
 	searchTerms, err := setupSearchTerms(exportList)
 	if err != nil {
@@ -30,7 +33,7 @@ func Collect(handler handler, exportList FileExportList, zipFile *zip.Writer, by
 	defer handler.Handle().Close()
 
 	var foundFiles foundFiles
-	foundFiles, err = findFiles(handler, searchTerms, bytesPerSector)
+	foundFiles, err = findFiles(handler, searchTerms, handler.vbr.BytesPerSector)
 	if err != nil {
 		return fmt.Errorf("findFiles() failed to find files: %w", err)
 	}

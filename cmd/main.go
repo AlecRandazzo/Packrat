@@ -5,12 +5,12 @@ package main
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/AlecRandazzo/Packrat/internal/packrat"
+	"github.com/AlecRandazzo/Packrat/internal/collect/windows"
+	"github.com/AlecRandazzo/Packrat/internal/parse"
 	"github.com/alecthomas/kong"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"runtime"
-	"strings"
 	"time"
 )
 
@@ -22,7 +22,7 @@ var CLI struct {
 	} `cmd help:"Collect forensic data."`
 	Parse struct {
 		Mft    string `arg:"" short:"m" help:"Mft File"`
-		Output string `arg:"" short:"o" help:"Output csv"`
+		Output string `arg:"" short:"o" help:"Output file"`
 	} `cmd help:"Parse forensic data."`
 }
 
@@ -33,6 +33,8 @@ const (
 
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.ErrorLevel)
 
 	ctx := kong.Parse(&CLI)
 	switch ctx.Command() {
@@ -41,16 +43,16 @@ func main() {
 			runtime.GOMAXPROCS(1)
 		}
 		if CLI.Collect.Debug {
-			debugLog, _ := os.Create("debug.log")
+			debugLog, err := os.Create("debug.log")
+			if err != nil {
+				panic(err)
+			}
 			log.SetOutput(debugLog)
 			log.SetLevel(log.DebugLevel)
-		} else {
-			log.SetOutput(os.Stdout)
-			log.SetLevel(log.ErrorLevel)
 		}
 
 		systemDrive := os.Getenv("SYSTEMDRIVE")
-		exportList := packrat.FileExportList{
+		exportList := windows.FileExportList{
 			{
 				FullPath:      fmt.Sprintf(`%s\$MFT`, systemDrive),
 				FullPathRegex: false,
@@ -99,7 +101,11 @@ func main() {
 		if CLI.Collect.Output != "" {
 			zipName = CLI.Collect.Output
 		} else {
-			hostName, _ := os.Hostname()
+			hostName, err := os.Hostname()
+			if err != nil {
+				panic(err)
+			}
+
 			zipName = fmt.Sprintf("%s_%s.zip", hostName, time.Now().Format("2006-01-02T15.04.05Z"))
 		}
 		fileHandle, err := os.Create(zipName)
@@ -109,23 +115,23 @@ func main() {
 		defer fileHandle.Close()
 
 		zipWriter := zip.NewWriter(fileHandle)
-		//resultWriter := packrat.ZipResultWriter{
+		//resultWriter := collect.ZipResultWriter{
 		//	ZipWriter:  zipWriter,
 		//	FileHandle: fileHandle,
 		//}
 		defer zipWriter.Close()
-		volumeHandler := packrat.NewVolumeHandler(strings.Trim(os.Getenv("SYSTEMDRIVE"), ":"))
-		err = packrat.Collect(volumeHandler, exportList, zipWriter, defaultBytesPerSector)
+
+		err = windows.Collect(exportList, zipWriter)
 		if err != nil {
 			log.Panic(err)
 		}
 	case "parse <mft>":
-		writer, err := packrat.NewCsvWriter(CLI.Parse.Output)
+		writer, err := parse.NewCsvWriter(CLI.Parse.Output)
 		if err != nil {
 			panic(err)
 		}
 
-		err = packrat.Parse(CLI.Parse.Mft, writer, defaultBytesPerSector, defaultBytesPerCluster)
+		err = parse.Parse(CLI.Parse.Mft, writer, defaultBytesPerSector, defaultBytesPerCluster)
 		if err != nil {
 			panic(err)
 		}
