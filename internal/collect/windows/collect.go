@@ -3,10 +3,9 @@
 package windows
 
 import (
-	"archive/zip"
 	"fmt"
+	"github.com/AlecRandazzo/Packrat/internal/collect"
 	log "github.com/sirupsen/logrus"
-	"io"
 	"os"
 	"strings"
 
@@ -14,7 +13,7 @@ import (
 )
 
 // Collect will find and collect target files into a format depending on the resultWriter type
-func Collect(exportList FileExportList, zipFile *zip.Writer) error {
+func Collect(exportList FileExportList, writer collect.Writer) error {
 	// volumeHandler as an arg is a dependency injection
 	log.Debugf("Attempting to acquire the following files %+v", exportList)
 
@@ -38,7 +37,7 @@ func Collect(exportList FileExportList, zipFile *zip.Writer) error {
 		return fmt.Errorf("findFiles() failed to find files: %w", err)
 	}
 
-	copyFiles(handler, foundFiles, zipFile)
+	copyFiles(handler, foundFiles, writer)
 
 	return nil
 }
@@ -46,10 +45,10 @@ func Collect(exportList FileExportList, zipFile *zip.Writer) error {
 func findFiles(handler handler, listOfSearchKeywords searchTermsList, bytesPerSector uint) (foundFiles, error) {
 	foundFiles := make(foundFiles, 0)
 
-	// parse the mft's mft record to get its dataruns
+	// parser the mft's mft record to get its dataruns
 	mftRecord0, err := parseMFTRecord0(handler)
 	if err != nil {
-		err = fmt.Errorf("parseMFTRecord0() failed to parse mft record 0 from the volume %s: %w", handler.VolumeLetter(), err)
+		err = fmt.Errorf("parseMFTRecord0() failed to parser mft record 0 from the volume %s: %w", handler.VolumeLetter(), err)
 		return nil, err
 	}
 	log.Debugf("Parsed the MFT's MFT record and got the following: %+v", mftRecord0)
@@ -81,7 +80,7 @@ func findFiles(handler handler, listOfSearchKeywords searchTermsList, bytesPerSe
 	return foundFiles, nil
 }
 
-func copyFiles(handler handler, foundFiles foundFiles, zipFile *zip.Writer) {
+func copyFiles(handler handler, foundFiles foundFiles, writer collect.Writer) {
 	for _, file := range foundFiles {
 		// try to get an io.reader via api first
 		reader, err := apiFileReader(file)
@@ -92,17 +91,18 @@ func copyFiles(handler handler, foundFiles foundFiles, zipFile *zip.Writer) {
 		} else {
 			log.Debugf("Got an API io.Reader for '%s'.", file.fullPath)
 		}
-		normalizedFilePath := strings.ReplaceAll(file.fullPath, `\`, "_")
-		normalizedFilePath = strings.ReplaceAll(normalizedFilePath, ":", "_")
-		var writer io.Writer
-		writer, err = zipFile.Create(normalizedFilePath)
+
+		normalizedFilePath := normalizeFilePath(file.fullPath)
+		err = writer.Write(reader, normalizedFilePath)
 		if err != nil {
-			log.Errorf("failed to create file in zip: %v", err)
-		}
-		_, err = io.Copy(writer, reader)
-		if err != nil {
-			log.Errorf("failed to write %s", file.fullPath)
+			log.Errorf("failed to write %s to zip: %s", file.fullPath, err.Error())
 		}
 	}
 	return
+}
+
+func normalizeFilePath(filepath string) string {
+	normalizeFilePath := strings.ReplaceAll(filepath, `\`, "_")
+	normalizeFilePath = strings.ReplaceAll(normalizeFilePath, ":", "_")
+	return normalizeFilePath
 }

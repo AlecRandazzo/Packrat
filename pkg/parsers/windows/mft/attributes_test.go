@@ -56,7 +56,7 @@ func Test_getAttributes(t *testing.T) {
 		wantErr                          bool
 	}{
 		{
-			name: "parse all attribute",
+			name: "parser all attribute",
 			rawAttributes: [][]byte{
 				0: {16, 0, 0, 0, 96, 0, 0, 0, 0, 0, 24, 0, 0, 0, 0, 0, 72, 0, 0, 0, 24, 0, 0, 0, 234, 36, 205, 74, 116, 212, 209, 1, 234, 36, 205, 74, 116, 212, 209, 1, 234, 36, 205, 74, 116, 212, 209, 1, 234, 36, 205, 74, 116, 212, 209, 1, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 				1: {48, 0, 0, 0, 104, 0, 0, 0, 0, 0, 24, 0, 0, 0, 3, 0, 74, 0, 0, 0, 24, 0, 1, 0, 5, 0, 0, 0, 0, 0, 5, 0, 234, 36, 205, 74, 116, 212, 209, 1, 234, 36, 205, 74, 116, 212, 209, 1, 234, 36, 205, 74, 116, 212, 209, 1, 234, 36, 205, 74, 116, 212, 209, 1, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 4, 3, 36, 0, 77, 0, 70, 0, 84, 0, 0, 0, 0, 0, 0, 0},
@@ -271,20 +271,20 @@ func Test_getAttributes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotFileNameAttributes, gotStandardInformationAttribute, gotDataAttribute, gotAttributeListAttribute, err := GetAttributes(tt.rawAttributes, tt.args.bytesPerCluster)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("parse() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parser() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotFileNameAttributes, tt.wantFileNameAttributes) {
-				t.Errorf("parse() \ngotFileNameAttributes = %v, \nwant %v", gotFileNameAttributes, tt.wantFileNameAttributes)
+				t.Errorf("parser() \ngotFileNameAttributes = %v, \nwant %v", gotFileNameAttributes, tt.wantFileNameAttributes)
 			}
 			if !reflect.DeepEqual(gotStandardInformationAttribute, tt.wantStandardInformationAttribute) {
-				t.Errorf("parse() \ngotStandardInformationAttribute = %v, \nwant %v", gotStandardInformationAttribute, tt.wantStandardInformationAttribute)
+				t.Errorf("parser() \ngotStandardInformationAttribute = %v, \nwant %v", gotStandardInformationAttribute, tt.wantStandardInformationAttribute)
 			}
 			if !reflect.DeepEqual(gotDataAttribute, tt.wantDataAttribute) {
-				t.Errorf("parse() \ngotDataAttribute = %v, \nwant %v", gotDataAttribute, tt.wantDataAttribute)
+				t.Errorf("parser() \ngotDataAttribute = %v, \nwant %v", gotDataAttribute, tt.wantDataAttribute)
 			}
 			if !reflect.DeepEqual(gotAttributeListAttribute, tt.wantAttributeListAttribute) {
-				t.Errorf("parse() \ngotDataAttribute = %v, \nwant %v", gotAttributeListAttribute, tt.wantAttributeListAttribute)
+				t.Errorf("parser() \ngotDataAttribute = %v, \nwant %v", gotAttributeListAttribute, tt.wantAttributeListAttribute)
 			}
 
 		})

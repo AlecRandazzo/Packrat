@@ -130,7 +130,7 @@ func Test_apiFileReader(t *testing.T) {
 			args: args{file: foundFile{
 				dataRuns: nil,
 				fullPath: filepath.FromSlash("../../../test/testdata/dummyntfs"),
-				fileSize: 0,
+				size:     0,
 			}},
 			wantErr: false,
 		},

@@ -278,7 +278,7 @@ func Test_ParseRecord(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotMftRecord, err := ParseRecord(tt.args.rawMftRecord, tt.args.bytesPerSector, tt.args.bytesPerCluster)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("parse() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parser() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotMftRecord, tt.wantMftRecord) {

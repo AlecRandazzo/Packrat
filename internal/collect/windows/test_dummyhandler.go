@@ -32,7 +32,7 @@ func (dummy *dummyHandler) GetHandle() error {
 	}
 	dummy.vbr, err = vbr.Parse(volumeBootRecord)
 	if err != nil {
-		return fmt.Errorf("NewOldVolumeHandler() failed to parse vbr from volume letter %s: %w", dummy.volumeLetter, err)
+		return fmt.Errorf("NewOldVolumeHandler() failed to parser vbr from volume letter %s: %w", dummy.volumeLetter, err)
 	}
 	log.Debugf("Successfully got a file handle to volume %v and read its volume boot record.", dummy.volumeLetter)
 

@@ -55,7 +55,7 @@ func (event event) parse(inBytes []byte) error {
 	event.writtenTimestamp, _ = timestamp.Parse(buffer)
 
 	buffer, _ = byteshelper.GetValue(inBytes, eventBinXmlMeta)
-	_ = buffer // TODO parse the byteshelper XML
+	_ = buffer // TODO parser the byteshelper XML
 
 	return nil
 }

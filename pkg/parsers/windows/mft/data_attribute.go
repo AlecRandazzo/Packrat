@@ -72,14 +72,14 @@ func getDataAttribute(input []byte, bytesPerCluster uint) (dataAttribute interfa
 		var residentDataAttribute ResidentDataAttribute
 		residentDataAttribute, err = getResidentDataAttribute(input)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse resident data attribute: %w", err)
+			return nil, fmt.Errorf("failed to parser resident data attribute: %w", err)
 		}
 		return residentDataAttribute, nil
 	}
 	var nonResidentDataAttribute NonResidentDataAttribute
 	nonResidentDataAttribute, err = getNonResidentDataAttribute(input, bytesPerCluster)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse non resident data attribute: %w", err)
+		return nil, fmt.Errorf("failed to parser non resident data attribute: %w", err)
 	}
 
 	return nonResidentDataAttribute, nil

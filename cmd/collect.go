@@ -1,9 +1,9 @@
 package main
 
 import (
-	"archive/zip"
 	"errors"
 	"fmt"
+	"github.com/AlecRandazzo/Packrat/internal/collect"
 	"github.com/AlecRandazzo/Packrat/internal/collect/windows"
 	"os"
 	"runtime"
@@ -80,20 +80,14 @@ func (c *CollectCmd) Run() error {
 
 			zipName = fmt.Sprintf("%s_%s.zip", hostName, time.Now().Format("2006-01-02T15.04.05Z"))
 		}
-		fileHandle, err := os.Create(zipName)
+
+		writer, err := collect.NewZipWriter(zipName)
 		if err != nil {
-			return fmt.Errorf("failed to create zip file %s: %w", zipName, err)
+			panic(err)
 		}
-		defer fileHandle.Close()
+		defer writer.Close()
 
-		zipWriter := zip.NewWriter(fileHandle)
-		//resultWriter := collect.ZipResultWriter{
-		//	ZipWriter:  zipWriter,
-		//	FileHandle: fileHandle,
-		//}
-		defer zipWriter.Close()
-
-		err = windows.Collect(exportList, zipWriter)
+		err = windows.Collect(exportList, writer)
 		if err != nil {
 			return fmt.Errorf("failed to collect forensic data: %w", err)
 		}

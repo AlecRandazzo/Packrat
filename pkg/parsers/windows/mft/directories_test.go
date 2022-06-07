@@ -208,39 +208,6 @@ func TestUnresolvedDirectoryTree_Resolve(t *testing.T) {
 				50: "C:\\$ORPHANFILE\\orphan",
 			},
 		},
-		{
-			name: "test1",
-			unresolvedDirectoryTree: UnresolvedDirectoryTree{
-				5: UnResolvedDirectory{
-					RecordNumber:       5,
-					DirectoryName:      ".",
-					ParentRecordNumber: 5,
-				},
-				11: UnResolvedDirectory{
-					RecordNumber:       11,
-					DirectoryName:      "$Extend",
-					ParentRecordNumber: 5,
-				},
-				23: UnResolvedDirectory{
-					RecordNumber:       23,
-					DirectoryName:      "testing",
-					ParentRecordNumber: 11,
-				},
-				50: UnResolvedDirectory{
-					RecordNumber:       50,
-					DirectoryName:      "orphan",
-					ParentRecordNumber: 34,
-				},
-				0: UnResolvedDirectory{
-					RecordNumber:       0,
-					DirectoryName:      "",
-					ParentRecordNumber: 0,
-				},
-			},
-			wantDirectoryTree: DirectoryTree{},
-			volumeLetter:      "",
-			wantErr:           true,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -281,16 +248,6 @@ func TestBuildDirectoryTree(t *testing.T) {
 				11: "C:\\$Extend",
 			},
 		},
-		{
-			name: "test2",
-			args: args{
-				reader:         bytes.NewReader([]byte{}),
-				volumeLetter:   "",
-				bytesPerSector: 512,
-			},
-			wantDirectoryTree: DirectoryTree{},
-			wantErr:           true,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -301,45 +258,6 @@ func TestBuildDirectoryTree(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotDirectoryTree, tt.wantDirectoryTree) {
 				t.Errorf(cmp.Diff(gotDirectoryTree, tt.wantDirectoryTree))
-			}
-		})
-	}
-}
-
-func Test_checkVolumeLetter(t *testing.T) {
-	type args struct {
-		volumeLetter string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name:    "test1",
-			args:    args{volumeLetter: "C"},
-			wantErr: false,
-		},
-		{
-			name:    "test2",
-			args:    args{volumeLetter: "Cc"},
-			wantErr: true,
-		},
-		{
-			name:    "test3",
-			args:    args{volumeLetter: "1"},
-			wantErr: true,
-		},
-		{
-			name:    "test4",
-			args:    args{volumeLetter: ""},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := checkVolumeLetter(tt.args.volumeLetter); (err != nil) != tt.wantErr {
-				t.Errorf("checkVolumeLetter() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

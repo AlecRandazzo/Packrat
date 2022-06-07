@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"unicode"
 )
 
 // UnResolvedDirectory type is used for creating a directory tree.
@@ -76,7 +75,7 @@ func ConvertRawMFTRecordToDirectory(input []byte, bytesPerSector uint) (UnResolv
 	// init return variable
 	var directory UnResolvedDirectory
 
-	// Find the filename attribute and parse it for its record number, directory name, and parent record number.
+	// Find the filename attribute and parser it for its record number, directory name, and parent record number.
 	var fnAttributes FileNameAttributes
 	fnAttributes, _, _, _, err = GetAttributes(rawAttributes, 4096)
 	for _, fileNameAttribute := range fnAttributes {
@@ -116,10 +115,6 @@ func buildUnresolvedDirectoryTree(reader io.Reader, bytesPerSector uint) (Unreso
 
 // Resolve combines a running list of directories from a channel in order to create the systems directory trees.
 func (unresolvedDirectoryTree UnresolvedDirectoryTree) Resolve(volumeLetter string) (DirectoryTree, error) {
-	err := checkVolumeLetter(volumeLetter)
-	if err != nil {
-		return DirectoryTree{}, fmt.Errorf("failed to build directory tree due to invalid volume letter: %w", err)
-	}
 	directoryTree := make(DirectoryTree)
 	for recordNumber, directoryMetadata := range unresolvedDirectoryTree {
 		// Sanity check
@@ -154,24 +149,8 @@ func (unresolvedDirectoryTree UnresolvedDirectoryTree) Resolve(volumeLetter stri
 
 // BuildDirectoryTree takes an MFT and creates a directory tree where the slice keys are the mft record number of the UnResolvedDirectory.
 func BuildDirectoryTree(reader io.Reader, volumeLetter string, bytesPerSector uint) (DirectoryTree, error) {
-	err := checkVolumeLetter(volumeLetter)
-	if err != nil {
-		return DirectoryTree{}, fmt.Errorf("failed to build directory tree due to invalid volume letter: %w", err)
-	}
 	directoryTree := make(DirectoryTree)
 	unresolvedDirectoryTree, _ := buildUnresolvedDirectoryTree(reader, bytesPerSector)
 	directoryTree, _ = unresolvedDirectoryTree.Resolve(volumeLetter)
 	return directoryTree, nil
-}
-
-func checkVolumeLetter(volumeLetter string) error {
-	volumeLetterRune := []rune(volumeLetter)
-	if volumeLetter == "" {
-		return errors.New("volume letter was blank")
-	} else if len(volumeLetterRune) != 1 {
-		return errors.New("volume letter contained more than one character")
-	} else if !unicode.IsLetter(volumeLetterRune[0]) {
-		return errors.New("volume letter was not a letter")
-	}
-	return nil
 }

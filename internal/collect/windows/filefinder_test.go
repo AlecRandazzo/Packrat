@@ -240,12 +240,12 @@ func Test_confirmFoundFiles(t *testing.T) {
 				0: foundFile{
 					dataRuns: nil,
 					fullPath: `c:\exactmatch`,
-					fileSize: 0,
+					size:     0,
 				},
 				1: foundFile{
 					dataRuns: nil,
 					fullPath: `c:\regexmatch`,
-					fileSize: 0,
+					size:     0,
 				},
 			},
 			args: args{

@@ -50,7 +50,7 @@ func getStandardInformationAttribute(input []byte) (StandardInformationAttribute
 		return StandardInformationAttribute{}, errors.New("non resident standard information attribute")
 	}
 
-	// parse timestamps
+	// parser timestamps
 	buffer, _ = byteshelper.GetValue(input, siCreatedLocation)
 	si.Created, _ = timestamp.Parse(buffer)
 

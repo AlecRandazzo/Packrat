@@ -2,6 +2,8 @@
 
 package windows
 
+import "testing"
+
 //func TestCollect(t *testing.T) {
 //	type args struct {
 //		exportList   FileExportList
@@ -20,7 +22,7 @@ package windows
 //			args: args{
 //				exportList: FileExportList{
 //					0: {
-//						FullPath:      `%SYSTEMDRIVE%:\$MFT`,
+//						fullPath:      `%SYSTEMDRIVE%:\$MFT`,
 //						FullPathRegex: false,
 //						FileName:      `$MFT`,
 //						FileNameRegex: false,
@@ -178,3 +180,29 @@ package windows
 //		})
 //	}
 //}
+
+func Test_normalizeFilePath(t *testing.T) {
+	type args struct {
+		filepath string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Normalize path",
+			args: args{
+				filepath: `C:\Windows\evil.exe`,
+			},
+			want: "C__Windows_evil.exe",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := normalizeFilePath(tt.args.filepath); got != tt.want {
+				t.Errorf("normalizeFilePath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

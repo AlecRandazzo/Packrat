@@ -40,7 +40,7 @@ func parseMFTRecord0(handler handler) (mft.Record, error) {
 	var mft0 mft.Record
 	mft0, err = mft.ParseRecord(buffer, handler.Vbr().BytesPerSector, handler.Vbr().BytesPerCluster)
 	if err != nil {
-		return mft.Record{}, fmt.Errorf("Handler.parseMFTRecord0() failed to parse the mft's mft record: %w", err)
+		return mft.Record{}, fmt.Errorf("Handler.parseMFTRecord0() failed to parser the mft's mft record: %w", err)
 	}
 	log.Debugf("Identified the following data runs for the MFT itself: %+v", mft0.DataAttribute.NonResidentDataAttribute.DataRuns)
 

@@ -69,7 +69,7 @@ func GetAttributes(input [][]byte, bytesPerCluster uint) (FileNameAttributes, St
 	var dataAttribute DataAttribute
 	attributesList := make(AttributeListAttributes, 0)
 
-	// Determine what each raw attribute is and parse it accordingly.
+	// Determine what each raw attribute is and parser it accordingly.
 	for _, rawAttribute := range input {
 
 		// Sanity check to make sure the attribute actually has input in it.
@@ -82,7 +82,7 @@ func GetAttributes(input [][]byte, bytesPerCluster uint) (FileNameAttributes, St
 				errors.New("came across a rawAttribute with a nil size")
 		}
 
-		// Check the first byte to see if it is one of the "magic number" input we care about. If it is, we parse those raw attributes accordingly.
+		// Check the first byte to see if it is one of the "magic number" input we care about. If it is, we parser those raw attributes accordingly.
 		switch rawAttribute[0x00] {
 		case magicNumberFileName:
 			fnAttribute, err := getFileNameAttribute(rawAttribute)

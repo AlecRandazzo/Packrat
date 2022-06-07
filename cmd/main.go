@@ -14,11 +14,6 @@ var CLI struct {
 	Debug   bool       `help:"Enable debug mode."`
 }
 
-const (
-	defaultBytesPerSector  = 512
-	defaultBytesPerCluster = 4096
-)
-
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)

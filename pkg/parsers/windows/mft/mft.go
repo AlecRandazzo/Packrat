@@ -8,7 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/byteshelper"
+	log "github.com/sirupsen/logrus"
+	"os"
 	"reflect"
+	"strings"
 )
 
 // Record contains information on a parsed MFT record
@@ -23,6 +26,49 @@ type Record struct {
 		FullPath                string
 		ChosenFileNameAttribute FileNameAttribute
 	}
+}
+
+const defaultRecordSize = 1024
+
+func ParseFile(reader *os.File, writer Writer, bytesPerSector, bytesPerCluster uint) error {
+	// Make directory tree
+	dirTree, err := BuildDirectoryTree(reader, "", bytesPerSector)
+
+	// Reset offset pointer back to the beginning
+	_, err = reader.Seek(0, 0)
+	if err != nil {
+		return fmt.Errorf("failed to seek back to the beginning of the mft for second pass: %w", err)
+	}
+
+	var offset uint64
+	for {
+		buf := make([]byte, defaultRecordSize)
+		var n int
+		n, err = reader.Read(buf)
+		if err != nil {
+			break
+		}
+		offset += uint64(n)
+		record, _ := ParseRecord(buf, bytesPerSector, bytesPerCluster)
+		record.Metadata.MftOffset = offset
+
+		// Pick an FN attribute
+		for _, attribute := range record.FileNameAttributes {
+			if strings.Contains(string(attribute.FileNamespace), "WIN32") ||
+				strings.Contains(string(attribute.FileNamespace), "WIN32 & DOS") ||
+				strings.Contains(string(attribute.FileNamespace), "POSIX") {
+				record.Metadata.ChosenFileNameAttribute = attribute
+				break
+			}
+		}
+		record.Metadata.FullPath = fmt.Sprintf(`%s\%s`, dirTree[record.Header.RecordNumber], record.Metadata.ChosenFileNameAttribute.FileName)
+		err = writer.Write(record)
+		if err != nil && err != invalidRecord {
+			log.Errorf("failed to parser record: %s", err.Error())
+		}
+	}
+
+	return nil
 }
 
 // ParseRecord the raw MFT record and returns a parsed mft record.

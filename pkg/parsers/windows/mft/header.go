@@ -80,7 +80,7 @@ func getHeaderFlags(input byte) Flags {
 }
 
 var (
-	mftRecordMagicNumber         = []byte("FILE0")
+	MagicNumber                  = []byte{0x46, 0x49, 0x4c, 0x45, 0x30} // FILE0
 	mftRecordMagicNumberLocation = byteshelper.NewDataLocation(0x00, 0x05)
 )
 
@@ -98,7 +98,7 @@ func ValidateMftRecordBytes(input []byte) error {
 	// check magic number
 	buffer, _ := byteshelper.GetValue(input, mftRecordMagicNumberLocation)
 
-	if bytes.Compare(buffer, mftRecordMagicNumber) != 0 {
+	if bytes.Compare(buffer, MagicNumber) != 0 {
 		return errors.New("incorrect magic number")
 	}
 

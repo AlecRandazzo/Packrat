@@ -122,7 +122,7 @@ func rawFileReader(handler handler, file foundFile) io.Reader {
 		fileName:                      file.fullPath,
 		dataRunTracker:                0,
 		dataRunBytesLeftToReadTracker: 0,
-		totalFileSize:                 file.fileSize,
+		totalFileSize:                 file.size,
 		initialized:                   false,
 	}
 }

@@ -4,7 +4,6 @@ package evtx
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/AlecRandazzo/Packrat/pkg/parsers/general/byteshelper"
@@ -13,7 +12,7 @@ import (
 
 // These are effectively constants
 var (
-	fileHeaderMagicNumber, _  = hex.DecodeString("456c6646696c6500") // ElfFile\x00
+	MagicNumber               = []byte{0x45, 0x6c, 0x66, 0x46, 0x69, 0x6c, 0x65, 0x00} // ElfFile\x00
 	fileHeaderMagicNumberMeta = byteshelper.NewDataLocation(0x00, 0x08)
 	firstChunkNumberMeta      = byteshelper.NewDataLocation(0x08, 0x08)
 	lastChunkNumberMeta       = byteshelper.NewDataLocation(0x10, 0x08)
@@ -24,9 +23,9 @@ var (
 	headerBlockSizeMeta       = byteshelper.NewDataLocation(0x28, 0x02)
 	numberOfChunksMeta        = byteshelper.NewDataLocation(0x2A, 0x02)
 	fileFlagsMeta             = byteshelper.NewDataLocation(0x78, 0x04)
-	fileFlagDirty             = 0x0001
-	fileFlagFull              = 0x0002
-	fileHeaderCheckSumMeta    = byteshelper.NewDataLocation(0x7C, 0x04)
+	//fileFlagDirty             = 0x0001
+	//fileFlagFull              = 0x0002
+	fileHeaderCheckSumMeta = byteshelper.NewDataLocation(0x7C, 0x04)
 )
 
 type fileHeader struct {
@@ -52,7 +51,7 @@ func (fileHeader fileHeader) parse(inBytes []byte) error {
 	}
 
 	buffer, _ := byteshelper.GetValue(inBytes, fileHeaderMagicNumberMeta)
-	if bytes.Compare(buffer, fileHeaderMagicNumber) != 0 {
+	if bytes.Compare(buffer, MagicNumber) != 0 {
 		return fmt.Errorf("this is not an evtx file header since magic number is %x", buffer)
 	}
 

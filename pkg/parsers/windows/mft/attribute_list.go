@@ -50,7 +50,7 @@ func getAttributeListAttribute(input []byte) (AttributeListAttributes, error) {
 	buffer, _ = byteshelper.GetValue(input, attributeListRecordLengthLocation)
 	recordLength := binary.LittleEndian.Uint16(buffer)
 	if int(recordLength) != size {
-		return AttributeListAttributes{}, fmt.Errorf("received a byte slice thats not equal to the expected attribute length. Size received was %d but expected %d", size, recordLength)
+		return AttributeListAttributes{}, fmt.Errorf("received a byte slice thats not equal to the expected attribute length. size received was %d but expected %d", size, recordLength)
 	}
 
 	attributeList := make(AttributeListAttributes, 0)
