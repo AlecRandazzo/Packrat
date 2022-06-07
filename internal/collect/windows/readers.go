@@ -6,14 +6,14 @@ import (
 	"io"
 	"os"
 
+	"github.com/AlecRandazzo/Packrat/pkg/windows/mft"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/volume"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/mft"
 )
 
 // dataRunsReader contains all the information needed to support the data runs reader function
 type dataRunsReader struct {
-	Handler                       handler
+	Handler                       volume.Handler
 	DataRuns                      mft.DataRuns
 	fileName                      string
 	dataRunTracker                int
@@ -23,6 +23,7 @@ type dataRunsReader struct {
 	initialized                   bool
 }
 
+// Read is an io.Reader that reads data found at a set of dataruns.
 func (dataRunReader *dataRunsReader) Read(byteSliceToPopulate []byte) (numberOfBytesRead int, err error) {
 	bufferSize := int64(len(byteSliceToPopulate))
 
@@ -33,7 +34,7 @@ func (dataRunReader *dataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 	}
 
 	// Check if this reader has been initialized, if not, do so.
-	if dataRunReader.initialized != true {
+	if !dataRunReader.initialized {
 		if dataRunReader.totalFileSize == 0 {
 			for _, dataRun := range dataRunReader.DataRuns {
 				dataRunReader.totalFileSize += dataRun.Length
@@ -41,8 +42,8 @@ func (dataRunReader *dataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 		}
 		dataRunReader.dataRunTracker = 0
 		dataRunReader.dataRunBytesLeftToReadTracker = dataRunReader.DataRuns[dataRunReader.dataRunTracker].Length
-		newOffset, _ := dataRunReader.Handler.Handle().Seek(dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
-		newOffset = dataRunReader.Handler.LastOffset() - bufferSize
+		_, _ = dataRunReader.Handler.Handle().Seek(dataRunReader.DataRuns[dataRunReader.dataRunTracker].AbsoluteOffset, 0)
+		newOffset := dataRunReader.Handler.LastOffset() - bufferSize
 		dataRunReader.Handler.UpdateLastOffset(newOffset)
 		dataRunReader.initialized = true
 
@@ -111,11 +112,13 @@ func (dataRunReader *dataRunsReader) Read(byteSliceToPopulate []byte) (numberOfB
 	return numberOfBytesRead, nil
 }
 
-func apiFileReader(file foundFile) (io.Reader, error) {
+// newApiFileReader tries to create an io.Reader against a file using Windows APIs. This does not work for certain systems files.
+func newApiFileReader(file foundFile) (io.Reader, error) {
 	return os.Open(file.fullPath)
 }
 
-func rawFileReader(handler handler, file foundFile) io.Reader {
+// newRawFileReader creates an io.Reader against the raw file on disk. This reader bypasses read blocks.
+func newRawFileReader(handler volume.Handler, file foundFile) io.Reader {
 	return &dataRunsReader{
 		Handler:                       handler,
 		DataRuns:                      file.dataRuns,

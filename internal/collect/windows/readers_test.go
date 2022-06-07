@@ -7,15 +7,14 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/AlecRandazzo/Packrat/pkg/windows/mft"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/volume"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/mft"
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/vbr"
 )
 
 func TestDataRunsReader_Read(t *testing.T) {
 	type fields struct {
-		VolumeHandler                 *VolumeHandler
+		Handler                       *volume.Volume
 		DataRuns                      mft.DataRuns
 		fileName                      string
 		dataRunTracker                int
@@ -28,34 +27,21 @@ func TestDataRunsReader_Read(t *testing.T) {
 		byteSliceToPopulate []byte
 	}
 	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		logLevel     log.Level
-		dummyHandler dummyHandler
-		wantBytes    []byte
+		name      string
+		fields    fields
+		args      args
+		logLevel  log.Level
+		dummy     volume.Dummy
+		wantBytes []byte
 	}{
 		{
 			name:     "fake data run",
 			logLevel: log.DebugLevel,
-			dummyHandler: dummyHandler{
-				handle:       nil,
-				volumeLetter: "c",
-				vbr: vbr.VolumeBootRecord{
-					VolumeLetter:           "c",
-					BytesPerSector:         0,
-					SectorsPerCluster:      0,
-					BytesPerCluster:        0,
-					MftOffset:              0,
-					MftRecordSize:          0,
-					ClustersPerIndexRecord: 0,
-				},
-				reader:     nil,
-				lastOffset: 0,
-				filePath:   filepath.FromSlash("../../../test/testdata/dummyntfs"),
+			dummy: volume.Dummy{
+				FilePath: filepath.FromSlash("../../../test/testdata/dummyntfs"),
 			},
 			fields: fields{
-				VolumeHandler: &VolumeHandler{},
+				Handler: &volume.Volume{},
 				DataRuns: mft.DataRuns{
 					0: mft.DataRun{
 						AbsoluteOffset: 0,
@@ -82,15 +68,15 @@ func TestDataRunsReader_Read(t *testing.T) {
 				log.SetLevel(tt.logLevel)
 			}
 
-			err := tt.dummyHandler.GetHandle()
+			err := tt.dummy.GetHandle()
 			if err != nil {
-				t.Errorf("failed to open dummyHandler file %s: %v", tt.dummyHandler.filePath, err)
+				t.Errorf("failed to open handler file %s: %v", tt.dummy.FilePath, err)
 				return
 			}
-			defer tt.dummyHandler.handle.Close()
+			defer tt.dummy.Handle().Close()
 
 			dataRunReader := &dataRunsReader{
-				Handler:                       &tt.dummyHandler,
+				Handler:                       &tt.dummy,
 				DataRuns:                      tt.fields.DataRuns,
 				fileName:                      tt.fields.fileName,
 				dataRunTracker:                tt.fields.dataRunTracker,
@@ -137,9 +123,9 @@ func Test_apiFileReader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := apiFileReader(tt.args.file)
+			_, err := newApiFileReader(tt.args.file)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("apiFileReader() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("newApiFileReader() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 		})

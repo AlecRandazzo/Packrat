@@ -3,19 +3,19 @@
 package windows
 
 import (
-	"github.com/google/go-cmp/cmp"
 	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/mft"
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/vbr"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/mft"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/volume"
+	"github.com/google/go-cmp/cmp"
 )
 
 func Test_parseMFTRecord0(t *testing.T) {
 	type args struct {
-		dummyHandler *dummyHandler
+		handler *volume.Dummy
 	}
 	tests := []struct {
 		name           string
@@ -95,26 +95,21 @@ func Test_parseMFTRecord0(t *testing.T) {
 				},
 				AttributeList: mft.AttributeListAttributes{},
 			},
-			args: args{dummyHandler: &dummyHandler{
-				handle:       nil,
-				volumeLetter: "",
-				vbr:          vbr.VolumeBootRecord{},
-				reader:       nil,
-				lastOffset:   0,
-				filePath:     filepath.FromSlash("../../../test/testdata/dummyntfs"),
+			args: args{handler: &volume.Dummy{
+				FilePath: filepath.FromSlash("../../../test/testdata/dummyntfs"),
 			}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.args.dummyHandler.GetHandle()
+			err := tt.args.handler.GetHandle()
 			if err != nil {
-				t.Errorf("failed to open dummyHandler file %s: %v", tt.args.dummyHandler.filePath, err)
+				t.Errorf("failed to open handler file %s: %v", tt.args.handler.FilePath, err)
 				return
 			}
-			defer tt.args.dummyHandler.handle.Close()
+			defer tt.args.handler.Handle().Close()
 			var gotMftRecord0 mft.Record
-			gotMftRecord0, err = parseMFTRecord0(tt.args.dummyHandler)
+			gotMftRecord0, err = parseMFTRecord0(tt.args.handler)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseMFTRecord0() error = %v, wantErr %v", err, tt.wantErr)
 				return

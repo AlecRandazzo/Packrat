@@ -3,15 +3,15 @@
 package windows
 
 import (
-	"github.com/google/go-cmp/cmp"
 	"path/filepath"
 	"reflect"
 	"regexp"
 	"testing"
 	"time"
 
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/mft"
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/vbr"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/mft"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/volume"
+	"github.com/google/go-cmp/cmp"
 )
 
 func Test_checkForPossibleMatch(t *testing.T) {
@@ -350,7 +350,7 @@ func Test_confirmFoundFiles(t *testing.T) {
 
 func Test_findPossibleMatches(t *testing.T) {
 	type args struct {
-		dummyHandler         *dummyHandler
+		dummyHandler         *volume.Dummy
 		listOfSearchKeywords searchTermsList
 		bytesPerSector       uint
 	}
@@ -365,23 +365,18 @@ func Test_findPossibleMatches(t *testing.T) {
 		{
 			name: "find possible matches",
 			args: args{
-				dummyHandler: &dummyHandler{
-					handle:       nil,
-					volumeLetter: "c",
-					vbr:          vbr.VolumeBootRecord{},
-					reader:       nil,
-					lastOffset:   0,
-					filePath:     filepath.FromSlash("../../../test/testdata/dummyntfs"),
+				dummyHandler: &volume.Dummy{
+					FilePath: filepath.FromSlash("../../../test/testdata/dummyntfs"),
 				},
 				listOfSearchKeywords: searchTermsList{
 					0: searchTerms{
-						fullPathString: `c:\$mftmirr`,
+						fullPathString: `:\$mftmirr`,
 						fullPathRegex:  nil,
 						fileNameString: "$mftmirr",
 						fileNameRegex:  nil,
 					},
 					1: searchTerms{
-						fullPathString: `c:\software`,
+						fullPathString: `:\software`,
 						fullPathRegex:  nil,
 						fileNameString: "software",
 						fileNameRegex:  nil,
@@ -391,8 +386,8 @@ func Test_findPossibleMatches(t *testing.T) {
 			},
 			wantErr: false,
 			wantDirectoryTree: mft.DirectoryTree{
-				5:  `c:`,
-				11: `c:\$Extend`,
+				5:  `:`,
+				11: `:\$Extend`,
 			},
 			wantListOfPossibleMatches: possibleMatches{
 				0: possibleMatch{
@@ -481,21 +476,21 @@ func Test_findPossibleMatches(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.args.dummyHandler.GetHandle()
 			if err != nil {
-				t.Errorf("could not open dummyHandler file %s: %v", tt.args.dummyHandler.filePath, err)
+				t.Errorf("could not open handler file %s: %v", tt.args.dummyHandler.FilePath, err)
 			}
 			defer tt.args.dummyHandler.Handle().Close()
 
 			mftRecord0, _ := parseMFTRecord0(tt.args.dummyHandler)
-			_, _ = tt.args.dummyHandler.handle.Seek(tt.args.dummyHandler.vbr.MftOffset, 0)
+			_, _ = tt.args.dummyHandler.Handle().Seek(tt.args.dummyHandler.Vbr().MftOffset, 0)
 
 			foundFile := foundFile{
 				dataRuns: mftRecord0.DataAttribute.NonResidentDataAttribute.DataRuns,
 				fullPath: "$mft",
 			}
-			tt.args.dummyHandler.UpdateReader(rawFileReader(tt.args.dummyHandler, foundFile))
+			tt.args.dummyHandler.UpdateReader(newRawFileReader(tt.args.dummyHandler, foundFile))
 			var gotListOfPossibleMatches possibleMatches
 			var gotDirectoryTree mft.DirectoryTree
-			gotListOfPossibleMatches, gotDirectoryTree, err = findPossibleMatches(tt.args.dummyHandler, tt.args.listOfSearchKeywords, tt.args.bytesPerSector)
+			gotListOfPossibleMatches, gotDirectoryTree, err = findPossibleMatches(tt.args.dummyHandler, tt.args.listOfSearchKeywords)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("findPossibleMatches() error = %v, wantErr %v", err, tt.wantErr)
 				return

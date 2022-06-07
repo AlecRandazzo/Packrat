@@ -3,11 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/AlecRandazzo/Packrat/internal/collect"
-	"github.com/AlecRandazzo/Packrat/internal/collect/windows"
 	"os"
 	"runtime"
 	"time"
+
+	"github.com/AlecRandazzo/Packrat/internal/collect"
+	"github.com/AlecRandazzo/Packrat/internal/collect/windows"
 )
 
 type CollectCmd struct {

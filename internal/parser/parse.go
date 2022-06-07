@@ -5,9 +5,10 @@ package parser
 import (
 	"errors"
 	"fmt"
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/mft"
 	"os"
 	"path/filepath"
+
+	"github.com/AlecRandazzo/Packrat/pkg/windows/mft"
 )
 
 type Format int

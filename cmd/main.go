@@ -3,14 +3,15 @@
 package main
 
 import (
+	"os"
+
 	"github.com/alecthomas/kong"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 var CLI struct {
-	Collect CollectCmd `cmd help:"Collect forensic data."`
-	Parse   ParseCmd   `cmd help:"Parse forensic data."`
+	Collect CollectCmd `cmd:"" help:"Collect forensic data."`
+	Parse   ParseCmd   `cmd:"" help:"Parse forensic data."`
 	Debug   bool       `help:"Enable debug mode."`
 }
 

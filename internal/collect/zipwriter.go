@@ -3,16 +3,19 @@ package collect
 import (
 	"archive/zip"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
+// Zip is used for writing files to a zip.
 type Zip struct {
 	file   *os.File
 	writer *zip.Writer
 }
 
+// NewZipWriter creates a new zip writer.
 func NewZipWriter(file string) (Zip, error) {
 	var err error
 	z := Zip{}
@@ -26,6 +29,7 @@ func NewZipWriter(file string) (Zip, error) {
 	return z, nil
 }
 
+// Write writes a file to a zip.
 func (z Zip) Write(reader io.Reader, fullPath string) error {
 	writer, err := z.writer.Create(fullPath)
 	if err != nil {
@@ -40,6 +44,7 @@ func (z Zip) Write(reader io.Reader, fullPath string) error {
 	return nil
 }
 
+// Close closes the handles to the zip writer and to the file.
 func (z Zip) Close() error {
 	var errRollup error
 	err := z.writer.Close()

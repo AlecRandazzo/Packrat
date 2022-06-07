@@ -29,6 +29,7 @@ type searchTerms struct {
 
 type searchTermsList []searchTerms
 
+// setupSearchTerms sets up search terms into a struct that is used by other functions
 func setupSearchTerms(exportList FileExportList) (searchTermsList, error) {
 	listOfSearchKeywords := make(searchTermsList, 0)
 	for _, value := range exportList {
@@ -43,9 +44,9 @@ func setupSearchTerms(exportList FileExportList) (searchTermsList, error) {
 		value.FullPath = strings.ToLower(value.FullPath)
 		value.FileName = strings.ToLower(value.FileName)
 
-		if value.FullPathRegex == false && strings.HasSuffix(value.FullPath, `\`) == true {
+		if !value.FullPathRegex && strings.HasSuffix(value.FullPath, `\`) {
 			return nil, fmt.Errorf("file path '%s' has a trailing '\\'", value.FullPath)
-		} else if value.FullPathRegex == true && strings.HasSuffix(value.FullPath, `\`) == true {
+		} else if !value.FullPathRegex && strings.HasSuffix(value.FullPath, `\`) {
 			return nil, fmt.Errorf("file path '%s' has missing a trailing '\\\\'", value.FullPath)
 		}
 
@@ -56,7 +57,11 @@ func setupSearchTerms(exportList FileExportList) (searchTermsList, error) {
 			searchKeywords.fullPathRegex = nil
 		case true:
 			searchKeywords.fullPathString = ""
-			searchKeywords.fullPathRegex = regexp.MustCompile(value.FullPath)
+			var err error
+			searchKeywords.fullPathRegex, err = regexp.Compile(value.FullPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to compile regex for %s: %w", value.FullPath, err)
+			}
 		}
 
 		switch value.FileNameRegex {

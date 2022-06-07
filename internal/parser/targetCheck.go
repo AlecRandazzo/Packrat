@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/evtx"
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/mft"
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/registry"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/evtx"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/mft"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/registry"
 )
 
 type targetType int
@@ -50,19 +50,19 @@ func getTargetType(target string) (targetType, error) {
 		return unknown, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	if bytes.Compare(buf[:len(zipMagicNumber)], zipMagicNumber) == 0 {
+	if bytes.Equal(buf[:len(zipMagicNumber)], zipMagicNumber) {
 		return zipType, nil
 	}
 
-	if bytes.Compare(buf[:len(mft.MagicNumber)], mft.MagicNumber) == 0 {
+	if bytes.Equal(buf[:len(mft.MagicNumber)], mft.MagicNumber) {
 		return mftType, nil
 	}
 
-	if bytes.Compare(buf[:len(registry.MagicNumber)], registry.MagicNumber) == 0 {
+	if bytes.Equal(buf[:len(registry.MagicNumber)], registry.MagicNumber) {
 		return registryType, nil
 	}
 
-	if bytes.Compare(buf[:len(evtx.MagicNumber)], evtx.MagicNumber) == 0 {
+	if bytes.Equal(buf[:len(evtx.MagicNumber)], evtx.MagicNumber) {
 		return eventLogType, nil
 	}
 

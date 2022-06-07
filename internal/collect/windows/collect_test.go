@@ -29,7 +29,7 @@ import "testing"
 //					},
 //				},
 //				resultWriter: ZipResultWriter{},
-//				handler: &dummyHandler{
+//				handler: &handler{
 //					handle:       nil,
 //					volumeLetter: "",
 //					vbr:          vbr.VolumeBootRecord{},
@@ -78,7 +78,7 @@ import "testing"
 //
 //func Test_getFiles(t *testing.T) {
 //	type args struct {
-//		dummyHandler         *dummyHandler
+//		handler         *handler
 //		resultWriter         ZipResultWriter
 //		listOfSearchKeywords searchTermsList
 //	}
@@ -92,7 +92,7 @@ import "testing"
 //		{
 //			name: "test1",
 //			args: args{
-//				dummyHandler: &dummyHandler{
+//				handler: &handler{
 //					handle:       nil,
 //					volumeLetter: "c",
 //					vbr:          vbr.VolumeBootRecord{},
@@ -123,7 +123,7 @@ import "testing"
 //		{
 //			name: "test2",
 //			args: args{
-//				dummyHandler: &dummyHandler{
+//				handler: &handler{
 //					handle:       nil,
 //					volumeLetter: "c",
 //					vbr:          vbr.VolumeBootRecord{},
@@ -154,13 +154,13 @@ import "testing"
 //				ZipWriter:  zipWriter,
 //				FileHandle: fileHandle,
 //			}
-//			err := tt.args.dummyHandler.GetHandle()
+//			err := tt.args.handler.GetHandle()
 //			if err != nil {
-//				t.Errorf("could not load dummyHandler file %s: %v", tt.args.dummyHandler.filePath, err)
+//				t.Errorf("could not load handler file %s: %v", tt.args.handler.filePath, err)
 //			}
-//			defer tt.args.dummyHandler.handle.Close()
+//			defer tt.args.handler.handle.Close()
 //
-//			_ = getFiles(tt.args.dummyHandler, &tt.args.resultWriter, tt.args.listOfSearchKeywords)
+//			_ = getFiles(tt.args.handler, &tt.args.resultWriter, tt.args.listOfSearchKeywords)
 //			zipWriter.Close()
 //			fileHandle.Close()
 //

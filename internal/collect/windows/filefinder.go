@@ -8,9 +8,9 @@ import (
 	"io"
 	"strings"
 
+	"github.com/AlecRandazzo/Packrat/pkg/windows/mft"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/volume"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/mft"
 )
 
 type possibleMatch struct {
@@ -30,6 +30,7 @@ type mftRecordWithNonResidentAttributes struct {
 
 type listOfMftRecordWithNonResidentAttributes []mftRecordWithNonResidentAttributes
 
+// checkForPossibleMatch checks for a possible match to our search terms.
 func checkForPossibleMatch(listOfSearchKeywords searchTermsList, fileNameAttributes mft.FileNameAttributes) (mft.FileNameAttribute, error) {
 	// Sanity Checking
 	if len(listOfSearchKeywords) == 0 {
@@ -60,7 +61,8 @@ func checkForPossibleMatch(listOfSearchKeywords searchTermsList, fileNameAttribu
 	return mft.FileNameAttribute{}, errors.New("no match")
 }
 
-func findPossibleMatches(handler handler, listOfSearchKeywords searchTermsList, bytesPerSector uint) (possibleMatches, mft.DirectoryTree, error) {
+// findPossibleMatches is an intermediary step that identifies possible matches to our search. These are later confirmed once a directory tree if fully created.
+func findPossibleMatches(handler volume.Handler, listOfSearchKeywords searchTermsList) (possibleMatches, mft.DirectoryTree, error) {
 	log.Debugf("Starting to scan the MFT's dataruns to create a tree of directories and to search for the for the following search terms: %+v", listOfSearchKeywords)
 
 	// Init memory
@@ -74,7 +76,6 @@ func findPossibleMatches(handler handler, listOfSearchKeywords searchTermsList, 
 		buffer := make([]byte, handler.Vbr().MftRecordSize)
 		_, err = handler.Reader().Read(buffer)
 		if err == io.EOF {
-			err = nil
 			break
 		}
 
@@ -85,7 +86,7 @@ func findPossibleMatches(handler handler, listOfSearchKeywords searchTermsList, 
 
 		err = mft.ValidateDirectory(buffer)
 		if err == nil {
-			unresolvedDirectory, _ := mft.ConvertRawMFTRecordToDirectory(buffer, bytesPerSector)
+			unresolvedDirectory, _ := mft.ConvertRawMFTRecordToDirectory(buffer, handler.Vbr().BytesPerSector, handler.Vbr().BytesPerCluster)
 			unresolvedDirectorTree[unresolvedDirectory.RecordNumber] = unresolvedDirectory
 			recordOffsetTracker[unresolvedDirectory.RecordNumber] = handler.LastOffset()
 		} else {
@@ -123,8 +124,8 @@ func findPossibleMatches(handler handler, listOfSearchKeywords searchTermsList, 
 
 	// Resolve the possible matches that had attribute lists
 	if len(listOfMftRecordWithNonResidentAttributes) != 0 {
-		newVolumeHandle := NewVolumeHandler(handler.VolumeLetter())
-		_ = newVolumeHandle.GetHandle()
+		newVolumeHandle, _ := volume.NewHandler(handler.Letter())
+
 		for _, record := range listOfMftRecordWithNonResidentAttributes {
 			attributeCounter := 0
 			sizeOfAttributeListAttributes := len(record.attributeListAttributes)
@@ -161,7 +162,7 @@ func findPossibleMatches(handler handler, listOfSearchKeywords searchTermsList, 
 	}
 
 	log.Debugf("Resolving %d directories we found to build their full paths.", len(unresolvedDirectorTree))
-	directoryTree, _ := unresolvedDirectorTree.Resolve(handler.VolumeLetter())
+	directoryTree, _ := unresolvedDirectorTree.Resolve(handler.Letter())
 	log.Debugf("Successfully resolved %d directories.", len(directoryTree))
 
 	return listOfPossibleMatches, directoryTree, nil
@@ -175,6 +176,7 @@ type foundFile struct {
 
 type foundFiles []foundFile
 
+// confirmFoundFiles verifies that the files we think are the ones we want to collect match our search terms.
 func confirmFoundFiles(listOfSearchKeywords searchTermsList, listOfPossibleMatches possibleMatches, directoryTree mft.DirectoryTree) foundFiles {
 	log.Debug("Determining what possible matches are true matches.")
 	foundFilesList := make(foundFiles, 0)
@@ -187,7 +189,7 @@ func confirmFoundFiles(listOfSearchKeywords searchTermsList, listOfPossibleMatch
 			counter := 0
 			for _, searchTerms := range listOfSearchKeywords {
 				if searchTerms.fullPathRegex != nil {
-					if searchTerms.fullPathRegex.MatchString(possibleMatchFullPath) == true {
+					if searchTerms.fullPathRegex.MatchString(possibleMatchFullPath) {
 						foundFile := foundFile{
 							dataRuns: possibleMatch.dataRuns,
 							fullPath: possibleMatchFullPath,

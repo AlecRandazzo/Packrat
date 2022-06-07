@@ -7,10 +7,12 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/AlecRandazzo/Packrat/pkg/parsers/windows/mft"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/mft"
+	"github.com/AlecRandazzo/Packrat/pkg/windows/volume"
 )
 
-func parseMFTRecord0(handler handler) (mft.Record, error) {
+// parseMFTRecord0 parses the $MFT records MFT record.
+func parseMFTRecord0(handler volume.Handler) (mft.Record, error) {
 	// Move handle pointer back to beginning of handler
 	_, err := handler.Handle().Seek(0x00, 0)
 	if err != nil {
